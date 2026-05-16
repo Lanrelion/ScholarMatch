@@ -1,0 +1,48 @@
+{
+  "name": "scholarmatch-temp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.2",
+    "@base-ui/react": "^1.4.1",
+    "@clerk/nextjs": "^6.x",
+    "@prisma/adapter-pg": "^7.x",
+    "@prisma/client": "^7.x",
+    "bullmq": "^5.76.8",
+    "class-variance-authority": "^0.x",
+    "clsx": "^2.x",
+    "lucide-react": "^0.x",
+    "next": "^15.2.3",
+    "pg": "^8.x",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "resend": "^4.x",
+    "svix": "^1.x",
+    "tailwind-merge": "^3.x"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.x",
+    "@types/node": "^20.19.41",
+    "@types/pg": "^8.x",
+    "@types/react": "^19.x",
+    "@types/react-dom": "^19.x",
+    "dotenv": "^16.x",
+    "eslint": "^9.x",
+    "eslint-config-next": "^15.2.3",
+    "postcss": "^8.x",
+    "prisma": "^7.x",
+    "tailwindcss": "^4.x",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "ts-node --compilerOptions {\"module\":\"CommonJS\"} prisma/seed.ts"
+  }
+}
