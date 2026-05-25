@@ -68,7 +68,7 @@ export async function GET(req: Request) {
       orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
     });
 
-    const results = scholarships.map((scholarship) => {
+    const results = scholarships.map((scholarship: any) => {
       const { matchScore, matchBreakdown } = scoreScholarship(scholarship, profile as any);
 
       return {
