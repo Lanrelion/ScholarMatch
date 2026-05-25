@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { CaretLeft } from "@phosphor-icons/react";
 
 export function BackButton({ label = "Back" }: { label?: string }) {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function BackButton({ label = "Back" }: { label?: string }) {
       className="flex items-center gap-1 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors text-sm py-2 pr-4 -ml-1"
       style={{ minHeight: "44px" }}
     >
-      <ChevronLeft size={16} />
+      <CaretLeft size={16} />
       {label}
     </button>
   );

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Bookmark, Bell, User } from "lucide-react";
+import { Compass, BookmarkSimple, Bell, User } from "@phosphor-icons/react";
 
 interface Props {
   savedCount?: number;
@@ -14,7 +14,7 @@ export default function BottomNav({ savedCount = 0 }: Props) {
 
   const tabs = [
     { id: "discover", label: "Discover", icon: Compass, path: "/dashboard" },
-    { id: "saved", label: "Saved", icon: Bookmark, path: "/saved", count: savedCount },
+    { id: "saved", label: "Saved", icon: BookmarkSimple, path: "/saved", count: savedCount },
     { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts" },
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
   ];
