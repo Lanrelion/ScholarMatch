@@ -12,6 +12,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const isPendingTab = tab === "pending";
 
+
+
   type ScholarshipRow = {
     id: string;
     title: string;
