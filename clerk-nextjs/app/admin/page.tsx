@@ -30,7 +30,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     }
   });
 
-  const totalSaves = scholarships.reduce((acc: number, s) => acc + s._count.savedBy, 0);
+  const totalSaves = scholarships.reduce((acc: number, s: typeof scholarships[number]) => acc + s._count.savedBy, 0);
   const activeCount = scholarships.filter(s => s.isActive).length;
   const verifiedCount = scholarships.filter(s => s.verified).length;
 
