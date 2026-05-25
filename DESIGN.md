@@ -348,14 +348,14 @@ const pageVariants = {
 {
   "framer-motion": "^11.x",
   "lenis": "^1.x",
-  "@studio-freight/react-lenis": "^0.x"
+  "lenis/react": "^0.x"
 }
 ```
 
 Initialise Lenis for smooth scroll on all non-modal pages:
 ```jsx
 // app/layout.tsx — wrap with ReactLenis
-import { ReactLenis } from '@studio-freight/react-lenis'
+import { ReactLenis } from 'lenis/react'
 ```
 
 ---
@@ -1286,7 +1286,7 @@ const getAtmosphericTone = (hour: number) => {
     "framework": "Next.js 16 App Router",
     "styling": "Tailwind CSS 4 + CSS custom properties",
     "animation": "Framer Motion 11",
-    "smooth-scroll": "Lenis + @studio-freight/react-lenis",
+    "smooth-scroll": "Lenis + lenis/react",
     "icons": "Phosphor Icons (phosphor-react)",
     "fonts": "Cormorant Garamond (Google Fonts) + DM Sans (Google Fonts)"
   },

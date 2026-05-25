@@ -16,7 +16,6 @@
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/adapter-pg": "^7.x",
     "@prisma/client": "^7.x",
-    "@studio-freight/react-lenis": "^0.0.47",
     "bullmq": "^5.76.8",
     "class-variance-authority": "^0.x",
     "clsx": "^2.x",
