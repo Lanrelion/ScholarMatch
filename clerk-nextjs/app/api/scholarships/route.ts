@@ -2,7 +2,6 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { scoreScholarship } from "@/lib/matching/scoreScholarship";
-import { DegreeLevel } from "@prisma/client";
 import { checkRateLimit } from "@/lib/checkRateLimit";
 import { discoveryLimiter } from "@/lib/ratelimit";
 
