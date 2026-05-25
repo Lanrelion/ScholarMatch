@@ -21,7 +21,7 @@ export default function AlertsPage() {
         </p>
       </main>
 
-      <BottomNav activeTab="alerts" />
+      <BottomNav />
     </div>
   );
 }

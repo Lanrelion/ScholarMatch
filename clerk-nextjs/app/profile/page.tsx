@@ -302,7 +302,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <BottomNav activeTab="profile" />
+      <BottomNav />
     </div>
   );
 }
