@@ -1,6 +1,9 @@
 "use client";
 
 import { OnboardingState } from "@/hooks/useOnboardingState";
+import { Input } from "@/components/ui/Input";
+import { Check } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   state?: OnboardingState;
@@ -37,34 +40,38 @@ export default function StepGPA({
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-4">
+    <div className="flex flex-col gap-10 pb-12">
       {/* SECTION A — GPA */}
       {!hideGPA && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {!hideHeader && (
             <div>
-              <h1 className="text-2xl font-medium text-gray-900 mb-2">What's your current GPA?</h1>
-              <p className="text-gray-500 text-sm font-normal">Optional — helps us filter out scholarships you won't qualify for</p>
+              <h1 className="text-4xl font-editorial text-ink mb-3 leading-tight">What's your current GPA?</h1>
+              <p className="text-ink-secondary text-base font-ui">Optional — helps us filter out scholarships you won't qualify for</p>
             </div>
           )}
 
-          <div className="flex items-center gap-3">
-            <input
-              type="number"
-              step="0.01"
-              placeholder="e.g. 3.8"
-              value={currentGpa}
-              onChange={(e) => handleUpdate("gpa", e.target.value)}
-              className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1D9E75] min-h-[44px]"
-            />
-            <div className="flex items-center rounded-xl border border-gray-200 p-1 bg-gray-50 min-h-[44px]">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Input
+                label="GPA (e.g. 3.8)"
+                type="number"
+                step="0.01"
+                value={currentGpa}
+                onChange={(e) => handleUpdate("gpa", e.target.value)}
+              />
+            </div>
+            <div className="flex items-center rounded-2xl border border-border p-1 bg-surface h-14">
               {SCALES.map((s) => (
                 <button
                   key={s}
                   onClick={() => handleUpdate("gpaScale", s)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    currentScale === s ? "bg-white shadow-sm border border-gray-200 text-gray-900" : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={cn(
+                    "px-4 h-full text-sm font-ui transition-all duration-200 rounded-xl",
+                    currentScale === s 
+                      ? "bg-bg shadow-sm border border-border text-ink font-medium" 
+                      : "text-ink-secondary hover:text-ink"
+                  )}
                 >
                   /{s}
                 </button>
@@ -72,56 +79,67 @@ export default function StepGPA({
             </div>
           </div>
 
-          <p className="text-xs text-gray-500 font-normal">
+          <p className="text-sm font-ui text-ink-secondary">
             Not sure how to convert? [Your GPA / Max scale × 4.0 = 4.0 equivalent]
           </p>
-
-          {!hideHeader && (
-            <button
-              onClick={() => handleUpdate("gpa", "")}
-              className="self-start text-sm text-[#1D9E75] font-medium hover:underline p-1 -ml-1 min-h-[44px]"
-            >
-              Skip GPA for now
-            </button>
-          )}
         </div>
       )}
 
-      {!hideGPA && !hideFinancial && <hr className="border-gray-100" />}
+      {!hideGPA && !hideFinancial && <hr className="border-border" />}
 
       {/* SECTION B — Financial need */}
       {!hideFinancial && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           {!hideHeader && (
             <div>
-              <h1 className="text-2xl font-medium text-gray-900 mb-2">Do you need financial support?</h1>
-              <p className="text-gray-500 text-sm font-normal">Some scholarships are need-based — this helps us match correctly</p>
+              <h1 className="text-4xl font-editorial text-ink mb-3 leading-tight">Do you need financial support?</h1>
+              <p className="text-ink-secondary text-base font-ui">Some scholarships are need-based — this helps us match correctly</p>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4">
             <button
               onClick={() => handleUpdate("needsFinancialAid", true)}
-              className={`flex-1 text-left p-4 rounded-xl border min-h-[44px] transition-colors ${
+              className={cn(
+                "flex-1 text-left p-6 rounded-2xl border transition-all duration-300 ease-in-out group",
                 currentFinancial === true
-                  ? "border-[#1D9E75] bg-[#E1F5EE]"
-                  : "border-gray-200 hover:border-gray-300 bg-white"
-              }`}
+                  ? "border-moss bg-moss-light shadow-sm scale-[1.01]"
+                  : "border-border bg-surface hover:border-border-strong hover:bg-surface-hover"
+              )}
             >
-              <div className={`font-medium ${currentFinancial === true ? "text-[#0F6E56]" : "text-gray-900"}`}>
-                I need financial support
+              <div className="flex items-start gap-4">
+                <div className={cn(
+                  "w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-colors mt-0.5",
+                  currentFinancial === true ? "border-moss bg-moss" : "border-border group-hover:border-border-strong"
+                )}>
+                  <Check weight="bold" size={14} className={cn(
+                    "text-white transition-opacity",
+                    currentFinancial === true ? "opacity-100" : "opacity-0"
+                  )} />
+                </div>
+                <div className="font-editorial text-xl font-medium text-ink">I need financial support</div>
               </div>
             </button>
             <button
               onClick={() => handleUpdate("needsFinancialAid", false)}
-              className={`flex-1 text-left p-4 rounded-xl border min-h-[44px] transition-colors ${
+              className={cn(
+                "flex-1 text-left p-6 rounded-2xl border transition-all duration-300 ease-in-out group",
                 currentFinancial === false
-                  ? "border-[#1D9E75] bg-[#E1F5EE]"
-                  : "border-gray-200 hover:border-gray-300 bg-white"
-              }`}
+                  ? "border-moss bg-moss-light shadow-sm scale-[1.01]"
+                  : "border-border bg-surface hover:border-border-strong hover:bg-surface-hover"
+              )}
             >
-              <div className={`font-medium ${currentFinancial === false ? "text-[#0F6E56]" : "text-gray-900"}`}>
-                I can self-fund if needed
+              <div className="flex items-start gap-4">
+                <div className={cn(
+                  "w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-colors mt-0.5",
+                  currentFinancial === false ? "border-moss bg-moss" : "border-border group-hover:border-border-strong"
+                )}>
+                  <Check weight="bold" size={14} className={cn(
+                    "text-white transition-opacity",
+                    currentFinancial === false ? "opacity-100" : "opacity-0"
+                  )} />
+                </div>
+                <div className="font-editorial text-xl font-medium text-ink">I can self-fund if needed</div>
               </div>
             </button>
           </div>

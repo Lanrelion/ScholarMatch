@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { OnboardingState } from "@/hooks/useOnboardingState";
+import { Input } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
 
 const COMMON_COUNTRIES = [
   { name: "Nigeria", code: "NG" },
@@ -90,26 +92,27 @@ export default function StepNationality({ state, updateField, value, onChange, h
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10 pb-12">
       {!hideHeader && (
         <div>
-          <h1 className="text-2xl font-medium text-gray-900 mb-2">Where are you from?</h1>
-          <p className="text-gray-500 text-sm font-normal">We use this to match you to eligible scholarships</p>
+          <h1 className="text-4xl font-editorial text-ink mb-3 leading-tight">Where are you from?</h1>
+          <p className="text-ink-secondary text-base font-ui">We use this to match you to eligible scholarships</p>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         {COMMON_COUNTRIES.map((country) => {
           const isSelected = currentVal === country.code;
           return (
             <button
               key={country.code}
               onClick={() => handleUpdate(country.code, country.name)}
-              className={`min-h-[44px] px-3 py-1 rounded-full text-sm border cursor-pointer transition-colors font-normal ${
+              className={cn(
+                "px-5 py-2.5 rounded-pill text-sm border transition-all duration-200 font-ui",
                 isSelected
-                  ? "bg-[#E1F5EE] border-[#1D9E75] text-[#0F6E56] font-medium"
-                  : "border-gray-200 text-gray-700 hover:border-gray-300 bg-white"
-              }`}
+                  ? "bg-moss text-white border-moss shadow-sm scale-[1.02]"
+                  : "border-border text-ink hover:border-border-strong hover:bg-surface-hover bg-surface"
+              )}
             >
               {country.name}
             </button>
@@ -117,10 +120,10 @@ export default function StepNationality({ state, updateField, value, onChange, h
         })}
       </div>
 
-      <div className="relative">
-        <input
+      <div className="relative mt-2">
+        <Input
+          label="Search other countries..."
           type="text"
-          placeholder="Search country..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -129,22 +132,21 @@ export default function StepNationality({ state, updateField, value, onChange, h
               else if (updateField) updateField("nationality", "");
             }
           }}
-          className="rounded-xl border border-gray-200 px-4 py-3 w-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1D9E75] min-h-[44px]"
         />
         {search && !ALL_AFRICAN_COUNTRIES.find(c => c.name.toLowerCase() === search.toLowerCase()) && (
-          <div className="absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+          <div className="absolute top-full left-0 right-0 mt-2 max-h-48 overflow-y-auto bg-surface border border-border rounded-xl shadow-lg z-10 no-scrollbar">
             {filtered.length > 0 ? (
               filtered.map((country) => (
                 <button
                   key={country.code}
-                  className="w-full text-left px-4 py-3 text-sm font-normal hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                  className="w-full text-left px-4 py-3 text-sm font-ui text-ink hover:bg-surface-hover focus:bg-surface-hover focus:outline-none transition-colors border-b border-border/50 last:border-0"
                   onClick={() => handleUpdate(country.code, country.name)}
                 >
                   {country.name}
                 </button>
               ))
             ) : (
-              <div className="px-4 py-3 text-sm font-normal text-gray-500">No countries found</div>
+              <div className="px-4 py-3 text-sm font-ui text-ink-secondary">No countries found</div>
             )}
           </div>
         )}

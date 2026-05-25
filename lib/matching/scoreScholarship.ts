@@ -17,12 +17,12 @@ export function scoreScholarship(
 ): { matchScore: number; matchBreakdown: MatchBreakdown } {
   let score = 0;
   const breakdown: MatchBreakdown = {
-    nationality: { pass: false, label: null },
-    degreeLevel: { pass: false, label: null },
-    field: { pass: false, label: null },
-    gpa: { pass: false, label: null },
-    financialNeed: { pass: false, label: null },
-    workExperience: { pass: false, label: null },
+    nationality: { pass: false, label: "" },
+    degreeLevel: { pass: false, label: "" },
+    field: { pass: false, label: "" },
+    gpa: { pass: false, label: "" },
+    financialNeed: { pass: false, label: "" },
+    workExperience: { pass: false, label: "" },
   };
 
   // 1. Nationality (20%)

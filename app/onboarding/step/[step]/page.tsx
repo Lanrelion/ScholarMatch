@@ -3,13 +3,15 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
-import StepName from "@/components/onboarding/StepName";
+import StepDreams from "@/components/onboarding/StepDreams";
 import StepNationality from "@/components/onboarding/StepNationality";
 import StepDegreeLevel from "@/components/onboarding/StepDegreeLevel";
 import StepFieldOfStudy from "@/components/onboarding/StepFieldOfStudy";
 import StepGPA from "@/components/onboarding/StepGPA";
 import StepExperience from "@/components/onboarding/StepExperience";
+import MatchReveal from "@/components/onboarding/MatchReveal";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function OnboardingStep({
   params,
@@ -20,6 +22,9 @@ export default function OnboardingStep({
   const router = useRouter();
   const stepNumber = parseInt(resolvedParams.step, 10);
   const [error, setError] = useState("");
+  const [showReveal, setShowReveal] = useState(false);
+  const [matchCount, setMatchCount] = useState(0);
+  const [topMatches, setTopMatches] = useState<any[]>([]);
   const { state, updateField, isStepValid } = useOnboardingState();
 
   if (isNaN(stepNumber) || stepNumber < 1 || stepNumber > 6) {
@@ -41,6 +46,7 @@ export default function OnboardingStep({
     if (stepNumber < 6) {
       router.push(`/onboarding/step/${stepNumber + 1}`);
     } else {
+      setShowReveal(true);
       try {
         const payload = {
           firstName: state.firstName.trim(),
@@ -63,44 +69,64 @@ export default function OnboardingStep({
         });
 
         if (res.ok) {
-          router.push("/dashboard");
+          // Fetch matches for the reveal
+          const matchRes = await fetch("/api/scholarships?limit=4");
+          if (matchRes.ok) {
+            const data = await matchRes.json();
+            setMatchCount(data.total || 0);
+            setTopMatches(data.scholarships || []);
+          }
         } else {
+          setShowReveal(false);
           const errorData = await res.json().catch(() => ({}));
           console.error("Onboarding submission failed:", res.status, errorData);
           setError(`Error: ${res.status} - ${errorData.error || "Please try again."}`);
         }
       } catch (err) {
+        setShowReveal(false);
         console.error("Onboarding submission error:", err);
         setError("Network error. Please check your connection.");
       }
     }
   };
 
-  const continueDisabled = !isStepValid(stepNumber);
+  const continueDisabled = !isStepValid(stepNumber) || showReveal;
+
+  if (showReveal) {
+    return (
+      <MatchReveal 
+        matchCount={matchCount} 
+        topMatches={topMatches} 
+        onComplete={() => router.push('/dashboard')} 
+      />
+    );
+  }
 
   return (
-    <OnboardingShell
-      currentStep={stepNumber}
-      totalSteps={6}
-      onBack={handleBack}
-      onContinue={handleContinue}
-      continueDisabled={continueDisabled}
-      isLastStep={stepNumber === 6}
-    >
-      <div className="flex-1 py-8 px-6 overflow-y-auto">
-        {stepNumber === 1 && <StepName state={state} updateField={updateField} />}
-        {stepNumber === 2 && <StepNationality state={state} updateField={updateField} />}
-        {stepNumber === 3 && <StepDegreeLevel state={state} updateField={updateField} />}
-        {stepNumber === 4 && <StepFieldOfStudy state={state} updateField={updateField} />}
-        {stepNumber === 5 && <StepGPA state={state} updateField={updateField} />}
-        {stepNumber === 6 && <StepExperience state={state} updateField={updateField} />}
-        
-        {error && stepNumber === 6 && (
-          <div className="mt-4 text-center text-sm font-medium text-[#E24B4A]">
-            {error}
-          </div>
-        )}
-      </div>
-    </OnboardingShell>
+    <>
+      <OnboardingShell
+        currentStep={stepNumber}
+        totalSteps={6}
+        onBack={handleBack}
+        onContinue={handleContinue}
+        continueDisabled={continueDisabled}
+        isLastStep={stepNumber === 6}
+      >
+        <div className="flex-1 py-8 px-6 overflow-y-auto">
+          {stepNumber === 1 && <StepDreams state={state} updateField={updateField} />}
+          {stepNumber === 2 && <StepNationality state={state} updateField={updateField} />}
+          {stepNumber === 3 && <StepDegreeLevel state={state} updateField={updateField} />}
+          {stepNumber === 4 && <StepFieldOfStudy state={state} updateField={updateField} />}
+          {stepNumber === 5 && <StepGPA state={state} updateField={updateField} />}
+          {stepNumber === 6 && <StepExperience state={state} updateField={updateField} />}
+          
+          {error && stepNumber === 6 && (
+            <div className="mt-4 text-center text-sm font-ui font-medium text-urgent">
+              {error}
+            </div>
+          )}
+        </div>
+      </OnboardingShell>
+    </>
   );
 }

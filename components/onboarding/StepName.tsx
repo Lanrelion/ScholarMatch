@@ -1,6 +1,7 @@
 "use client";
 
 import { OnboardingState } from "@/hooks/useOnboardingState";
+import { Input } from "@/components/ui/Input";
 
 interface Props {
   state?: OnboardingState;
@@ -18,27 +19,25 @@ export default function StepName({ state, updateField, firstName, lastName, onCh
     else if (updateField) updateField(field, value);
   };
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       <div>
-        <h1 className="text-2xl font-medium text-gray-900 mb-2">What's your name?</h1>
-        <p className="text-gray-500 text-sm font-normal">This personalises your experience</p>
+        <h1 className="text-4xl font-editorial text-ink mb-3 leading-tight">What's your name?</h1>
+        <p className="text-ink-secondary text-base font-ui">This personalizes your experience</p>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <input
+      <div className="flex flex-col gap-6">
+        <Input
+          label="First Name"
           type="text"
-          placeholder="First name"
           value={currentFirstName}
           onChange={(e) => handleUpdate("firstName", e.target.value)}
           autoFocus={!firstName}
-          className="rounded-xl border border-gray-200 px-4 py-3 w-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1D9E75] min-h-[44px]"
         />
-        <input
+        <Input
+          label="Last Name"
           type="text"
-          placeholder="Last name"
           value={currentLastName}
           onChange={(e) => handleUpdate("lastName", e.target.value)}
-          className="rounded-xl border border-gray-200 px-4 py-3 w-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1D9E75] min-h-[44px]"
         />
       </div>
     </div>

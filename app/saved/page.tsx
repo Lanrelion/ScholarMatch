@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bookmark, AlertTriangle, ArrowRight, RefreshCcw } from "lucide-react";
+import { WarningCircle, Bookmark, ArrowRight, ArrowClockwise, ArrowLeft } from "@phosphor-icons/react";
 import SavedItem from "@/components/saved/SavedItem";
 import { BottomNav } from "@/components/layout/BottomNav";
 import ReviewPrompt from "@/components/reviews/ReviewPrompt";
+import { PushPermission } from "@/components/pwa/PushPermission";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { cn } from "@/lib/utils";
 
 export default function SavedPage() {
@@ -50,160 +52,130 @@ export default function SavedPage() {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const now = new Date();
-  const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+  // Organize items
+  const upcomingDeadlineItems = items
+    .filter((item) => item.scholarship.deadline !== null)
+    .sort((a, b) => new Date(a.scholarship.deadline!).getTime() - new Date(b.scholarship.deadline!).getTime());
 
-  const closingSoonItems = items.filter((item) => {
-    if (!item.scholarship.deadline) return false;
-    const deadline = new Date(item.scholarship.deadline);
-    return deadline <= fourteenDaysFromNow && deadline >= now;
-  }).sort((a, b) => new Date(a.scholarship.deadline!).getTime() - new Date(b.scholarship.deadline!).getTime());
-
-  const otherSavedItems = items.filter((item) => {
-    if (!item.scholarship.deadline) return false;
-    const deadline = new Date(item.scholarship.deadline);
-    return deadline > fourteenDaysFromNow;
-  }).sort((a, b) => new Date(a.scholarship.deadline!).getTime() - new Date(b.scholarship.deadline!).getTime());
-
-  const openItems = items.filter((item) => item.scholarship.deadline === null);
+  const openDeadlineItems = items.filter((item) => item.scholarship.deadline === null);
+  const alertedItems = items.filter((item) => item.changeAlerted);
 
   return (
-    <div className="min-h-screen bg-white pb-24 flex flex-col items-center animate-in fade-in duration-300">
-      <div className="w-full max-w-2xl">
-        {/* Pattern A Header */}
-        <header className="px-4 pt-6 pb-2 flex items-start justify-between">
+    <div className="min-h-screen bg-bg flex flex-col items-center">
+      <div className="w-full max-w-[1000px] px-6 lg:px-8 pt-6 pb-24">
+        
+        {/* Back row */}
+        <div className="mb-4">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-1.5 bg-transparent hover:bg-surface-hover px-2 py-1 -ml-2 rounded-md transition-colors text-ink font-ui font-medium text-[14px]"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
+        </div>
+
+        {/* HEADER ROW */}
+        <header className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-bold text-[var(--color-text-primary)]">Saved</h1>
-            <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">
-              {items.length} opportunities tracked
+            <h1 className="text-[28px] font-editorial font-normal text-ink leading-tight">
+              Saved
+            </h1>
+            <p className="text-[13px] font-ui text-ink-secondary mt-1">
+              {items.length} saved · {pendingReviews.length} to review
             </p>
           </div>
         </header>
 
-        {/* Change Alerts */}
-        <div className="px-4 mt-4">
-          {items.filter(item => item.changeAlerted).map(item => (
-            <div 
-              key={`alert-${item.id}`}
-              onClick={() => router.push(`/scholarship/${item.scholarship.id}?from=saved`)}
-              className="bg-[var(--color-amber-surface)] rounded-[var(--radius-md)] p-3 mb-3 border border-[var(--color-amber)]/20 flex items-start gap-3 cursor-pointer active:scale-[0.98] transition-transform shadow-sm"
-            >
-              <AlertTriangle size={18} className="text-[var(--color-amber)] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-[var(--color-amber-dark)] font-bold leading-tight">
-                  Updated: {item.scholarship.title}
-                </p>
-                <p className="text-xs text-[var(--color-amber-dark)] opacity-70 mt-0.5">
-                  Requirements changed. Please review before applying.
-                </p>
+        {/* FRESHNESS ALERT BANNERS */}
+        {alertedItems.length > 0 && (
+          <div className="mb-8">
+            {alertedItems.map(item => (
+              <div 
+                key={`alert-${item.id}`}
+                onClick={() => router.push(`/scholarship/${item.scholarship.id}`)}
+                className="bg-warning-surface border-l-[3px] border-l-warning rounded-lg p-[14px] px-[18px] mb-2 flex items-start gap-2.5 cursor-pointer hover:bg-warning/10 transition-colors"
+              >
+                <WarningCircle size={18} weight="fill" className="text-warning shrink-0 mt-[2px]" />
+                <div>
+                  <h4 className="text-[14px] font-ui font-medium text-ink mb-0.5">
+                    {item.scholarship.title}
+                  </h4>
+                  <p className="text-[12px] font-ui text-warning-dark leading-snug">
+                    This scholarship has been updated. Check the latest details before applying.
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Reviews Section */}
+        {/* REVIEW PROMPTS */}
         {pendingReviews.length > 0 && (
-          <div className="mt-6 mb-2">
-            <h2 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] font-bold px-4 mb-3">
+          <div className="mb-8">
+            <div className="text-[11px] font-ui font-medium text-moss tracking-[0.1em] uppercase mb-4">
               Rate your matches
-            </h2>
-            <div className="space-y-3">
+            </div>
+            <div className="space-y-4">
               {pendingReviews.map((item) => (
-                <ReviewPrompt 
-                  key={`review-${item.id}`}
-                  scholarship={item.scholarship}
-                  savedScholarshipId={item.id}
-                  onComplete={(id) => setPendingReviews(prev => prev.filter(p => p.scholarship.id !== id))}
-                  onDismiss={(id) => setPendingReviews(prev => prev.filter(p => p.scholarship.id !== id))}
-                />
+                <div key={`review-${item.id}`} className="bg-surface border border-border rounded-xl p-4">
+                  <ReviewPrompt 
+                    scholarship={item.scholarship}
+                    savedScholarshipId={item.id}
+                    onComplete={(id) => setPendingReviews(prev => prev.filter(p => p.scholarship.id !== id))}
+                    onDismiss={(id) => setPendingReviews(prev => prev.filter(p => p.scholarship.id !== id))}
+                  />
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        <div className="mt-4">
-          {isLoading ? (
-            <div className="px-4 space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 bg-[var(--color-surface)] rounded-[var(--radius-md)] animate-pulse" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="py-16 px-6 text-center flex flex-col items-center">
-              <RefreshCcw size={40} className="text-[var(--color-red)] opacity-20 mb-4" />
-              <p className="text-[var(--color-red)] font-bold">{error}</p>
-              <button 
-                onClick={fetchData}
-                className="mt-6 h-[44px] px-8 bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] text-sm font-bold active:scale-95 transition-transform"
-              >
-                Try again
-              </button>
-            </div>
-          ) : items.length === 0 ? (
-            <div className="py-24 px-6 text-center flex flex-col items-center">
-              <div className="w-20 h-20 bg-[var(--color-surface)] rounded-full flex items-center justify-center mb-6">
-                <Bookmark size={32} className="text-[var(--color-text-tertiary)] opacity-30" />
-              </div>
-              <h2 className="text-lg font-bold text-[var(--color-text-primary)] mb-2">No saved matches yet</h2>
-              <p className="text-sm text-[var(--color-text-secondary)] mb-10 max-w-[260px] leading-relaxed">
-                Save scholarships you qualify for to get deadline reminders and track your progress.
-              </p>
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="bg-[var(--color-primary)] text-white px-10 py-3.5 rounded-[var(--radius-xl)] text-sm font-bold shadow-lg shadow-[var(--color-primary)]/20 active:scale-95 transition-all flex items-center gap-2"
-              >
-                Find opportunities
-                <ArrowRight size={18} />
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-10 mt-6 stagger-children">
-              {closingSoonItems.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 px-4 mb-4">
-                    <h2 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)] font-black">
-                      Closing soon
-                    </h2>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)] animate-pulse" />
-                  </div>
-                  <div className="divide-y divide-[var(--color-border)]/30 border-y border-[var(--color-border)]/30 bg-white">
-                    {closingSoonItems.map((item) => (
-                      <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
-                    ))}
-                  </div>
-                </section>
-              )}
+        {/* PUSH PERMISSION */}
+        <PushPermission />
 
-              {otherSavedItems.length > 0 && (
-                <section>
-                  <h2 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] font-bold px-4 mb-4">
-                    Saved Opportunities
-                  </h2>
-                  <div className="divide-y divide-[var(--color-border)]/30 border-y border-[var(--color-border)]/30 bg-white">
-                    {otherSavedItems.map((item) => (
-                      <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
-                    ))}
-                  </div>
-                </section>
-              )}
+        {/* SAVED LIST */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 bg-surface border border-border rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : error ? (
+          <ErrorState type="api-error" onRetry={fetchData} />
+        ) : items.length === 0 ? (
+          <ErrorState type="empty-saved" />
+        ) : (
+          <div className="space-y-10">
+            {upcomingDeadlineItems.length > 0 && (
+              <section>
+                <div className="text-[11px] font-ui font-medium uppercase tracking-[0.1em] text-ink-tertiary mb-3">
+                  Upcoming Deadlines
+                </div>
+                <div className="flex flex-col">
+                  {upcomingDeadlineItems.map((item) => (
+                    <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
+                  ))}
+                </div>
+              </section>
+            )}
 
-              {openItems.length > 0 && (
-                <section>
-                  <h2 className="text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] font-bold px-4 mb-4">
-                    Open deadline
-                  </h2>
-                  <div className="divide-y divide-[var(--color-border)]/30 border-y border-[var(--color-border)]/30 bg-white">
-                    {openItems.map((item) => (
-                      <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-          )}
-        </div>
+            {openDeadlineItems.length > 0 && (
+              <section>
+                <div className="text-[11px] font-ui font-medium uppercase tracking-[0.1em] text-ink-tertiary mb-3">
+                  Open Deadline
+                </div>
+                <div className="flex flex-col">
+                  {openDeadlineItems.map((item) => (
+                    <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
       </div>
-
       <BottomNav />
     </div>
   );

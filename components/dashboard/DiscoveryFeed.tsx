@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Star, ChevronRight, RefreshCcw } from "lucide-react";
+import { Star, CaretRight, ArrowsClockwise } from "@phosphor-icons/react";
 import { ScholarshipWithMatch } from "@/types/scholarship";
 import { ScholarshipCard } from "./ScholarshipCard";
 import { MatchingIndicator } from "@/components/ui/MatchingIndicator";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { ScholarshipCardSkeleton } from "@/components/ui/ScholarshipCardSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 const FILTER_OPTIONS = [
   { id: "all", label: "All matches" },
@@ -17,6 +19,27 @@ const FILTER_OPTIONS = [
   { id: "europe", label: "Europe" },
   { id: "masters", label: "Masters" },
 ];
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const revealVariants = {
+  hidden: { opacity: 0, y: 32, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.6,
+      ease: [0.22, 1, 0.36, 1] as any
+    }
+  }
+};
 
 export function DiscoveryFeed({ 
   initialScholarships = [], 
@@ -35,15 +58,15 @@ export function DiscoveryFeed({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialScholarships.length === 20); // Assumption for initial load
+  const [hasMore, setHasMore] = useState(initialScholarships.length === 20);
   const [activeFilter, setActiveFilter] = useState("all");
   const [userProfile, setUserProfile] = useState<any>(profile);
-  const [savedIds, setSavedIds] = useState<Record<string, string>>(initialSavedIds); // scholarshipId -> savedId
+  const [savedIds, setSavedIds] = useState<Record<string, string>>(initialSavedIds);
   const [reviewCount, setReviewCount] = useState(initialReviewCount);
   const [showNudge, setShowNudge] = useState(true);
+  const [isFreshMatch, setIsFreshMatch] = useState(false);
 
   const fetchData = async (pageNum: number, isMore = false) => {
-    // If we have initial data and it's the first page, we already have what we need
     if (pageNum === 1 && initialScholarships.length > 0 && !isMore) {
       setIsLoading(false);
       return;
@@ -98,8 +121,6 @@ export function DiscoveryFeed({
     }
   };
 
-  const [isFreshMatch, setIsFreshMatch] = useState(false);
-
   useEffect(() => {
     const lastMatch = localStorage.getItem("last_match_timestamp");
     const now = Date.now();
@@ -115,7 +136,6 @@ export function DiscoveryFeed({
 
   const filteredScholarships = useMemo(() => {
     let list = scholarships;
-
     if (query) {
       list = list.filter(s => 
         s.title.toLowerCase().includes(query) || 
@@ -151,9 +171,11 @@ export function DiscoveryFeed({
         {isFreshMatch ? (
           <MatchingIndicator />
         ) : (
-          <div className="px-4 mt-8 flex flex-col gap-4">
-            <div className="h-6 w-32 bg-gray-100 rounded animate-pulse mb-2" />
-            {[1, 2, 3].map(i => <ScholarshipCardSkeleton key={i} />)}
+          <div className="px-6 mt-8 flex flex-col gap-6">
+            <div className="h-6 w-32 bg-surface-hover rounded animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[1, 2, 3, 4].map(i => <ScholarshipCardSkeleton key={i} />)}
+            </div>
           </div>
         )}
       </div>
@@ -162,110 +184,144 @@ export function DiscoveryFeed({
 
   if (error) {
     return (
-      <div className="p-8">
-        <ErrorState 
-          title="Couldn't find scholarships"
-          description="There was a problem reaching our servers. Check your connection and try again."
-        />
-        <button 
-          onClick={() => fetchData(1)}
-          className="mt-6 w-full h-[44px] bg-[var(--color-primary)] text-white rounded-[var(--radius-md)] font-medium flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-        >
-          <RefreshCcw size={16} />
-          Retry connection
-        </button>
-      </div>
+      <ErrorState 
+        type="api-error"
+        onRetry={() => fetchData(1)}
+      />
     );
   }
 
+  const featured = displayList[0];
+  const horizontalGroup = displayList.slice(1, 4);
+  const gridGroup = displayList.slice(4);
+
   return (
-    <div className="flex flex-col animate-in fade-in duration-500">
-      <div className="mt-2 mb-2">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+      className="flex flex-col"
+    >
+      <motion.div variants={revealVariants} className="mt-2 mb-6">
         <FilterPills 
           options={FILTER_OPTIONS} 
           activeId={activeFilter} 
           onChange={setActiveFilter} 
         />
-      </div>
+      </motion.div>
 
-      <div className="px-4 mb-4">
-        <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">
-          {filteredScholarships.length} matches found
-        </p>
-      </div>
-
-      <div className="px-4 pb-12 flex flex-col gap-4 stagger-children">
+      <div className="px-6 pb-24 flex flex-col gap-12">
         {isEmptyState && (
-          <div className="p-4 bg-[var(--color-amber-surface)] rounded-[var(--radius-md)] border border-[var(--color-border)]/20 mb-2">
-             <p className="text-sm text-[var(--color-amber-dark)] font-medium">
+          <motion.div variants={revealVariants} className="p-4 bg-warning-surface rounded-lg border border-warning">
+             <p className="text-sm text-warning font-medium">
                {query ? `No results for "${query}"` : "No exact matches for this filter"}
              </p>
-             <p className="text-[13px] text-[var(--color-amber-dark)] opacity-80 mt-1">
+             <p className="text-[13px] text-warning mt-1 opacity-80">
                Showing your top overall matches instead:
              </p>
-          </div>
+          </motion.div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {displayList.map((s, idx) => (
-          <React.Fragment key={s.id}>
-            {/* Review Nudge */}
-            {idx === 2 && reviewCount > 0 && showNudge && (
-               <div 
-                 onClick={() => {
-                   sessionStorage.setItem("review_nudge_tapped", "true");
-                   setShowNudge(false);
-                   router.push('/saved');
-                 }}
-                 className="p-4 bg-[var(--color-primary-surface)] rounded-[var(--radius-md)] border border-[var(--color-primary-border)] flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform group shadow-sm"
-               >
-                 <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[var(--color-primary)] flex-shrink-0 shadow-sm">
-                   <Star size={20} fill="currentColor" />
-                 </div>
-                 <div className="flex-1">
-                   <p className="text-sm font-bold text-[var(--color-primary-dark)]">
-                     Rate your {reviewCount} matches
-                   </p>
-                   <p className="text-[11px] text-[var(--color-primary-dark)] opacity-70">
-                     Help us refine your future recommendations
-                   </p>
-                 </div>
-                 <ChevronRight size={18} className="text-[var(--color-primary)] group-hover:translate-x-0.5 transition-transform" />
-               </div>
-            )}
-            
+        {/* Featured Full-Width Card */}
+        {featured && (
+          <motion.div variants={revealVariants}>
+            <div className="flex items-center gap-2 mb-4">
+              <Star size={16} weight="fill" className="text-moss" />
+              <h2 className="font-editorial text-lg text-ink">Top Match</h2>
+            </div>
             <ScholarshipCard 
-              scholarship={s} 
-              initialSaved={!!savedIds[s.id]} 
-              savedItemId={savedIds[s.id]} 
+              scholarship={featured} 
+              initialSaved={!!savedIds[featured.id]} 
+              savedItemId={savedIds[featured.id]}
             />
+          </motion.div>
+        )}
 
-            {/* Profile Nudge */}
-            {idx === 4 && userProfile?.gpa === null && (
-               <div className="p-4 border-2 border-dashed border-[var(--color-border)] rounded-[var(--radius-md)] bg-[var(--color-surface)] flex items-center justify-between cursor-pointer active:scale-[0.99] transition-transform" onClick={() => router.push('/profile')}>
-                 <p className="text-[13px] text-[var(--color-text-secondary)] font-medium">Add your GPA for 40% better matching →</p>
-               </div>
-            )}
-          </React.Fragment>
-        ))}
-        </div>
+        {/* Horizontal Scroll Row */}
+        {horizontalGroup.length > 0 && (
+          <motion.div variants={revealVariants} className="-mx-6">
+            <div className="px-6 flex items-center justify-between mb-4">
+              <h2 className="font-editorial text-lg text-ink">Highly Recommended</h2>
+            </div>
+            <div className="flex overflow-x-auto gap-6 px-6 pb-4 snap-x snap-mandatory no-scrollbar">
+              {horizontalGroup.map((s) => (
+                <div key={s.id} className="min-w-[85vw] md:min-w-[400px] snap-center">
+                  <ScholarshipCard 
+                    scholarship={s} 
+                    initialSaved={!!savedIds[s.id]} 
+                    savedItemId={savedIds[s.id]} 
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* 2-Column Grid */}
+        {gridGroup.length > 0 && (
+          <motion.div variants={revealVariants}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-editorial text-lg text-ink">More Opportunities</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {gridGroup.map((s, idx) => (
+                <React.Fragment key={s.id}>
+                  {/* Review Nudge */}
+                  {idx === 2 && reviewCount > 0 && showNudge && (
+                     <div 
+                       onClick={() => {
+                         sessionStorage.setItem("review_nudge_tapped", "true");
+                         setShowNudge(false);
+                         router.push('/saved');
+                       }}
+                       className="p-4 bg-moss-light rounded-lg border border-moss flex items-center gap-3 cursor-pointer transition-transform hover:-translate-y-1"
+                     >
+                       <div className="w-10 h-10 rounded-full bg-bg flex items-center justify-center text-moss shrink-0">
+                         <Star size={20} weight="fill" />
+                       </div>
+                       <div className="flex-1">
+                         <p className="text-sm font-ui font-medium text-ink">
+                           Rate your {reviewCount} matches
+                         </p>
+                         <p className="text-xs font-ui text-ink-secondary mt-0.5">
+                           Help us refine your future recommendations
+                         </p>
+                       </div>
+                       <CaretRight size={18} className="text-moss" />
+                     </div>
+                  )}
+                  
+                  <ScholarshipCard 
+                    scholarship={s} 
+                    initialSaved={!!savedIds[s.id]} 
+                    savedItemId={savedIds[s.id]} 
+                  />
+                </React.Fragment>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {hasMore && (
-          <button
-            onClick={() => {
-              const next = page + 1;
-              setPage(next);
-              fetchData(next, true);
-            }}
-            disabled={isLoadingMore}
-            className="mt-4 bg-white border border-[var(--color-border-strong)] rounded-[var(--radius-md)] h-[50px] w-full text-sm text-[var(--color-text-secondary)] font-bold flex items-center justify-center gap-2 active:bg-gray-50 transition-colors"
-          >
-            {isLoadingMore ? (
-               <RefreshCcw size={16} className="animate-spin text-[var(--color-primary)]" />
-            ) : "View more opportunities"}
-          </button>
+          <motion.div variants={revealVariants} className="flex justify-center mt-4">
+            <Button
+              onClick={() => {
+                const next = page + 1;
+                setPage(next);
+                fetchData(next, true);
+              }}
+              disabled={isLoadingMore}
+              variant="secondary"
+              className="w-full md:w-auto flex items-center gap-2 justify-center"
+            >
+              {isLoadingMore ? (
+                 <ArrowsClockwise size={16} className="animate-spin text-clay" />
+              ) : "Load more opportunities"}
+            </Button>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
+

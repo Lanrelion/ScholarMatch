@@ -45,15 +45,15 @@ export function DashboardHeader({ firstName }: Props) {
   const displayName = firstName ? `, ${firstName}` : "";
 
   return (
-    <header className="px-4 pt-5 pb-3 flex items-center justify-between bg-white sticky top-0 z-30 transition-all duration-300">
+    <header className="px-6 py-5 flex items-center justify-between bg-bg/90 backdrop-blur-md sticky top-0 z-30 transition-all duration-300 border-b border-border">
       {!isSearchOpen ? (
         <>
           <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
-            <h1 className="text-lg font-black text-[var(--color-text-primary)] leading-tight tracking-tight">
+            <h1 className="text-2xl font-editorial font-medium text-ink leading-tight tracking-tight">
               {greeting}{displayName}
             </h1>
-            <p className="text-[var(--color-text-tertiary)] text-[10px] font-black mt-0.5 uppercase tracking-[0.2em]">
-              Find your scholarship
+            <p className="text-ink-secondary text-sm font-ui mt-0.5">
+              Let's find your perfect match
             </p>
           </div>
 
@@ -61,17 +61,17 @@ export function DashboardHeader({ firstName }: Props) {
             <button
               onClick={() => setIsSearchOpen(true)}
               aria-label="Search scholarships"
-              className="w-[44px] h-[44px] flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-surface)] rounded-full transition-all active:scale-90"
+              className="btn-icon"
             >
               <Search size={20} />
             </button>
             <Link
               href="/alerts"
               aria-label="Notifications"
-              className="w-[44px] h-[44px] flex items-center justify-center text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-surface)] rounded-full transition-all active:scale-90 relative"
+              className="btn-icon relative"
             >
               <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-[var(--color-red)] rounded-full border-2 border-white shadow-sm" />
+              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-urgent rounded-full border-2 border-surface shadow-sm" />
             </Link>
           </div>
         </>

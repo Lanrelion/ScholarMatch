@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { ChevronLeft, ArrowRight } from "lucide-react";
+import { CaretLeft, ArrowRight } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface Props {
   currentStep: number;
@@ -14,6 +16,12 @@ interface Props {
   children: React.ReactNode;
 }
 
+const pageVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as any } },
+  exit:    { opacity: 0, y: -8, transition: { duration: 0.25, ease: [0.4, 0, 1, 1] as any } }
+};
+
 export default function OnboardingShell({
   currentStep,
   totalSteps,
@@ -23,66 +31,66 @@ export default function OnboardingShell({
   isLastStep,
   children,
 }: Props) {
-  const steps = Array.from({ length: totalSteps }, (_, i) => i + 1);
+  const progressPercent = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-bg overflow-hidden relative">
+      {/* Full viewport width progress bar */}
+      <div className="fixed top-0 left-0 right-0 h-[2px] bg-border z-50 overflow-hidden">
+        <motion.div 
+          className="h-full bg-moss"
+          initial={{ width: 0 }}
+          animate={{ width: `${progressPercent}%` }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] as any }}
+        />
+      </div>
+
       {/* Sleek Progress Header */}
-      <div className="px-6 pt-10 pb-4 flex-none space-y-4">
-        <div className="flex w-full gap-1.5 h-1">
-          {steps.map((step) => (
-            <div
-              key={step}
-              className={cn(
-                "h-full flex-1 rounded-full transition-all duration-500",
-                step <= currentStep
-                  ? "bg-[var(--color-primary)]"
-                  : "bg-[var(--color-border)]"
-              )}
-            />
-          ))}
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)]">
+      <div className="pt-12 pb-4 flex-none">
+        <div className="px-6 flex justify-between items-center">
+          <span className="text-[10px] font-ui font-medium uppercase tracking-widest text-ink-secondary">
             Step {currentStep} of {totalSteps}
           </span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary)]">
-            {Math.round((currentStep / totalSteps) * 100)}% Complete
+          <span className="text-[10px] font-ui font-medium uppercase tracking-widest text-moss">
+            {Math.round(progressPercent)}% Complete
           </span>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <motion.div 
+        key={currentStep}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        className="flex-1 flex flex-col min-h-0 px-6 overflow-y-auto no-scrollbar"
+      >
         {children}
-      </div>
+      </motion.div>
 
       {/* Navigation Footer */}
-      <div className="p-6 pb-10 border-t border-[var(--color-border)] flex items-center gap-4 flex-none bg-white/80 backdrop-blur-md">
+      <div className="p-6 pb-[env(safe-area-inset-bottom)] border-t border-border flex items-center gap-4 flex-none bg-bg/80 backdrop-blur-md">
         {currentStep > 1 && (
           <button
             onClick={onBack}
-            className="flex items-center justify-center w-12 h-12 rounded-full border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-all active:scale-90"
+            className="btn-icon"
             aria-label="Go back"
           >
-            <ChevronLeft size={20} />
+            <CaretLeft size={20} />
           </button>
         )}
 
-        <button
+        <Button
           onClick={onContinue}
           disabled={continueDisabled}
-          className={cn(
-            "h-14 rounded-[var(--radius-xl)] px-8 font-bold text-sm transition-all flex-1 flex items-center justify-center gap-2 active:scale-[0.98]",
-            continueDisabled
-              ? "bg-[var(--color-border)] text-[var(--color-text-tertiary)] cursor-not-allowed"
-              : "bg-[var(--color-primary)] text-white shadow-[0_8px_20px_-4px_rgba(29,158,117,0.3)] hover:brightness-105"
-          )}
+          className="flex-1 flex items-center justify-center gap-2"
         >
-          {isLastStep ? "Find my scholarships" : "Continue"}
-          <ArrowRight size={18} strokeWidth={3} />
-        </button>
+          {isLastStep ? "Find my matches" : "Continue"}
+          <ArrowRight size={18} weight="bold" />
+        </Button>
       </div>
     </div>
   );
 }
+

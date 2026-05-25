@@ -3,7 +3,7 @@ export type FilterKey = "all" | "fullFunding" | "europe" | "masters";
 export type MatchSignal = {
   pass: boolean;
   partial?: boolean;
-  label: string | null;
+  label: string;
 };
 
 export type MatchBreakdown = {

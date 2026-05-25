@@ -14,6 +14,7 @@ export type OnboardingState = {
   needsFinancialAid: boolean | null;
   workExperienceYears: string;
   targetCountry: string;
+  aspiration: string | null;
 };
 
 const initialState: OnboardingState = {
@@ -27,6 +28,7 @@ const initialState: OnboardingState = {
   needsFinancialAid: null,
   workExperienceYears: "",
   targetCountry: "",
+  aspiration: null,
 };
 
 const stateCache: Record<string, OnboardingState> = {};

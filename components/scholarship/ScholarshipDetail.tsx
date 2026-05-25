@@ -2,23 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Bookmark, 
-  Share2, 
-  CheckCircle2, 
+  ArrowLeft, 
+  BookmarkSimple, 
+  ShareNetwork, 
+  Info, 
+  CheckCircle, 
   XCircle, 
-  AlertCircle, 
-  ExternalLink,
-  Globe,
-  GraduationCap,
-  BookOpen,
-  BarChart, 
-  Check,
-  Star,
-  Calendar
-} from "lucide-react";
+  WarningCircle, 
+  CaretDown 
+} from "@phosphor-icons/react";
 import { ScholarshipWithMatch, MatchSignal } from "@/types/scholarship";
-import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -34,13 +29,23 @@ export function ScholarshipDetail({
   matchScore,
   matchBreakdown,
   initialSaved = false,
-  savedId: initialSavedId,
+  savedItemId: initialSavedId,
 }: Props) {
   const router = useRouter();
   const [isSaved, setIsSaved] = useState(initialSaved);
   const [savedId, setSavedId] = useState(initialSavedId);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showOriginalEligibility, setShowOriginalEligibility] = useState(false);
+
+  // Animate progress bar on mount
+  const [progressWidth, setProgressWidth] = useState(0);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProgressWidth(Math.round(matchScore * 100));
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [matchScore]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -53,9 +58,8 @@ export function ScholarshipDetail({
     const shareData = {
       title: scholarship.title,
       text: `${scholarship.title} — ${scholarship.provider}.`,
-      url: `${window.location.origin}/scholarship/${scholarship.id}`,
+      url: window.location.href,
     };
-
     if (navigator.share) {
       try { await navigator.share(shareData); } catch (err) {}
     } else {
@@ -75,7 +79,7 @@ export function ScholarshipDetail({
         if (res.ok) {
           setIsSaved(false);
           setSavedId(undefined);
-          setToastMessage("Removed from matches");
+          setToastMessage("Removed from saved");
         }
       } else {
         const res = await fetch("/api/saved", {
@@ -91,7 +95,7 @@ export function ScholarshipDetail({
           const data = await res.json();
           setSavedId(data.id);
           setIsSaved(true);
-          setToastMessage("Saved to matches");
+          setToastMessage("Saved scholarship");
         }
       }
     } catch (err) {
@@ -112,244 +116,323 @@ export function ScholarshipDetail({
     }
   };
 
-  const formattedDeadline = scholarship.deadline
-    ? new Date(scholarship.deadline).toLocaleDateString("en-GB", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "Open deadline";
-
+  // Parsing values
+  const fundingType = scholarship.eligibilityParsed?.fundingType === "full" ? "FULLY FUNDED" : "PARTIAL FUNDING";
+  const degreeLevel = scholarship.eligibleDegrees?.[0]?.toUpperCase() || "ANY LEVEL";
+  
   const fundingValue = scholarship.eligibilityParsed?.fundingType === "full"
     ? "Fully funded"
     : scholarship.amount
     ? new Intl.NumberFormat("en-US", { style: "currency", currency: scholarship.currency || "USD" }).format(scholarship.amount)
-    : "See details";
+    : "Variable funding";
+
+  const formattedDeadline = scholarship.deadline
+    ? new Date(scholarship.deadline).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "Open / Rolling";
+
+  const getDeadlineColor = () => {
+    if (!scholarship.deadline) return "text-ink";
+    const days = Math.ceil((new Date(scholarship.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (days <= 7) return "text-urgent";
+    if (days <= 30) return "text-warning";
+    return "text-ink";
+  };
+
+  const appMethod = scholarship.eligibilityParsed?.applicationMethod;
+  const appValue = appMethod === "ADMISSION_FIRST" ? "Admission required first"
+                 : appMethod === "AUTOMATIC" ? "Auto-considered on admission"
+                 : "Apply directly";
+
+  // Match signals
+  const signals = [
+    { key: "Nationality", data: matchBreakdown.nationality },
+    { key: "Degree level", data: matchBreakdown.degreeLevel },
+    { key: "Field", data: matchBreakdown.field },
+    { key: "GPA", data: matchBreakdown.gpa },
+    { key: "Financial need", data: matchBreakdown.financialNeed },
+    { key: "Work experience", data: matchBreakdown.workExperience }
+  ];
+
+  const getSignalIcon = (signal: MatchSignal) => {
+    if (signal.partial) return <WarningCircle size={20} weight="fill" className="text-warning mt-[2px] shrink-0" />;
+    if (signal.pass) return <CheckCircle size={20} weight="fill" className="text-moss mt-[2px] shrink-0" />;
+    return <XCircle size={20} weight="fill" className="text-urgent mt-[2px] shrink-0" />;
+  };
+
+  // Unsplash fallback logic
+  const hostCountry = scholarship.eligibilityParsed?.hostCountry || scholarship.eligibilityParsed?.universityCountry || "";
+  const imageUrl = hostCountry ? `https://source.unsplash.com/1200x400/?${encodeURIComponent(hostCountry)},university,landscape` : null;
 
   return (
-    <div className="min-h-screen bg-white pb-20 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      {/* Mini Toast */}
-      {toastMessage && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-[var(--color-text-primary)] text-white text-[11px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-2xl flex items-center gap-2">
-            <Check size={14} strokeWidth={3} />
+    <div className="min-h-screen bg-bg relative">
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className="fixed top-24 left-1/2 z-[100] bg-ink text-white text-[12px] font-ui font-medium px-4 py-2 rounded-full shadow-lg"
+          >
             {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* HERO SECTION */}
+      <div 
+        className="w-full h-[280px] relative"
+        style={{
+          background: `linear-gradient(135deg, var(--color-moss) 0%, var(--color-moss-dark) 60%, var(--color-clay) 100%)`
+        }}
+      >
+        {imageUrl && (
+          <img 
+            src={imageUrl} 
+            alt="Location" 
+            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
+        
+        {/* Grain overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay grain-overlay" />
+        
+        {/* Top gradient overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 50%)" }}
+        />
+
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="absolute top-5 left-5 h-10 px-4 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 rounded-full flex items-center gap-2 text-white transition-colors z-10"
+        >
+          <ArrowLeft size={16} weight="bold" />
+          <span className="font-ui font-medium text-[13px]">Back</span>
+        </button>
+
+        {/* Actions */}
+        <div className="absolute top-5 right-5 flex items-center gap-2 z-10">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+          >
+            <BookmarkSimple size={20} weight={isSaved ? "fill" : "regular"} />
+          </button>
+          <button
+            onClick={handleShare}
+            className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+          >
+            <ShareNetwork size={20} weight="regular" />
+          </button>
+        </div>
+      </div>
+
+      {/* CONTENT SECTION */}
+      <div className="max-w-[720px] mx-auto px-6 pt-10 pb-[120px]">
+        
+        {/* HEADER BLOCK */}
+        <header>
+          <div className="text-[11px] font-ui font-medium uppercase tracking-[0.1em] text-moss mb-3">
+            {fundingType} · {degreeLevel}
+          </div>
+          <h1 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-editorial font-normal text-ink leading-[1.2] mb-3">
+            {scholarship.title}
+          </h1>
+          <div className="text-[14px] font-ui text-ink-secondary flex items-center flex-wrap gap-x-1.5">
+            <span className="font-medium text-ink">{scholarship.provider}</span>
+            <span>·</span>
+            <span>{scholarship.sourceDomain}</span>
+            {scholarship.lastChangedAt && (
+              <>
+                <span className="text-ink-tertiary ml-2">·</span>
+                <span className="text-[12px] text-ink-tertiary ml-1.5">
+                  Verified {Math.max(0, Math.floor((Date.now() - new Date(scholarship.lastChangedAt).getTime()) / 86400000))} days ago
+                </span>
+              </>
+            )}
+          </div>
+        </header>
+
+        {/* STATS GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">Funding</div>
+            <div className="text-[16px] font-ui font-medium text-ink truncate">{fundingValue}</div>
+          </div>
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">Deadline</div>
+            <div className={cn("text-[16px] font-ui font-medium truncate", getDeadlineColor())}>{formattedDeadline}</div>
+          </div>
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">Study Level</div>
+            <div className="text-[16px] font-ui font-medium text-ink truncate">
+              {scholarship.eligibleDegrees.join(" · ") || "Any"}
+            </div>
+          </div>
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">How to apply</div>
+            <div className="text-[16px] font-ui font-medium text-ink truncate">{appValue}</div>
           </div>
         </div>
-      )}
 
-      {/* Pattern B Header */}
-      <header className="px-4 py-4 sticky top-0 bg-white/80 backdrop-blur-md z-40 border-b border-[var(--color-border)]/50">
-        <BackButton />
-        <h1 className="text-[13px] sm:text-base font-black text-[var(--color-text-primary)] absolute left-1/2 -translate-x-1/2 whitespace-nowrap overflow-hidden text-ellipsis max-w-[160px] sm:max-w-md uppercase tracking-tight">
-          {scholarship.title}
-        </h1>
-        <div className="w-10" />
-      </header>
+        {appMethod === "ADMISSION_FIRST" && (
+          <div className="mt-3 bg-[#E6F1FB] rounded-lg p-3.5 px-4.5 flex items-start gap-2.5">
+            <Info size={18} weight="fill" className="text-[#185FA5] shrink-0 mt-[1px]" />
+            <p className="text-[13px] font-ui text-[#0C447C] leading-snug">
+              You must be admitted to this university before applying for this scholarship.
+            </p>
+          </div>
+        )}
 
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
-          {/* Left Column: Details */}
-          <div className="flex-1 space-y-12">
-            <section>
-              <div className="inline-block px-4 py-1.5 rounded-xl bg-[var(--color-primary-surface)] text-[var(--color-primary)] text-[10px] font-black uppercase tracking-[0.2em] mb-6">
-                {scholarship.provider}
-              </div>
-              <h1 className="text-4xl lg:text-6xl font-black text-[var(--color-text-primary)] leading-[1.05] mb-6 tracking-tighter">
-                {scholarship.title}
-              </h1>
-              <p className="text-lg text-[var(--color-text-secondary)] font-medium opacity-70">
-                Offering opportunities across {scholarship.sourceDomain}
-              </p>
-            </section>
+        {/* MATCH SCORE SECTION */}
+        <div className="mt-10 border-t border-border pt-10">
+          <div className="flex items-end justify-between mb-3">
+            <h3 className="text-[14px] font-ui font-medium text-ink">Your compatibility</h3>
+            <div className="text-[48px] font-editorial font-light text-moss leading-none">
+              {Math.round(matchScore * 100)}%
+            </div>
+          </div>
 
-            {/* Mobile Only Stats */}
-            <section className="lg:hidden grid grid-cols-2 gap-4">
-              <StatCard label="Funding" value={fundingValue} icon={Wallet} />
-              <StatCard label="Deadline" value={formattedDeadline} urgency={true} date={scholarship.deadline} />
-            </section>
+          <div className="w-full h-[6px] bg-border rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-moss rounded-full transition-[width] duration-1000"
+              style={{ width: `${progressWidth}%`, transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+            />
+          </div>
 
-            {/* Match Potential Section */}
-            <section className="p-8 rounded-[32px] border border-gray-100 bg-gray-50/50 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--color-primary)]/[0.03] to-transparent rounded-bl-[120px] pointer-events-none" />
-              
-              <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-8 mb-10">
-                <div>
-                  <h2 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.25em] mb-2">Match Potential</h2>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black text-[var(--color-primary)] tracking-tighter">{Math.round(matchScore * 100)}%</span>
-                    <span className="text-sm font-bold text-[var(--color-primary)] opacity-60 italic">Compatibility</span>
-                  </div>
-                </div>
-                
-                <div className="relative w-24 h-24 sm:w-32 sm:h-32">
-                  <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="16" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                    <circle
-                      cx="18" cy="18" r="16"
-                      fill="none"
-                      className="stroke-[var(--color-primary)]"
-                      strokeWidth="3"
-                      strokeDasharray={`${matchScore * 100}, 100`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white shadow-xl flex items-center justify-center">
-                      <Star className="text-[var(--color-primary)]" size={24} fill="currentColor" />
+          <div className="mt-6">
+            <div className="text-[11px] font-ui uppercase tracking-[0.1em] text-ink-tertiary mb-2">
+              Why you match
+            </div>
+            
+            <div className="flex flex-col">
+              {signals.map((sig, idx) => (
+                <div 
+                  key={sig.key} 
+                  className={cn(
+                    "flex items-start gap-3.5 py-3.5",
+                    idx !== signals.length - 1 && "border-b border-border"
+                  )}
+                >
+                  {getSignalIcon(sig.data)}
+                  <div>
+                    <div className="text-[14px] font-ui font-medium text-ink">
+                      {sig.key}
+                    </div>
+                    <div className="text-[13px] font-ui text-ink-secondary mt-[2px]">
+                      {sig.data.label}
                     </div>
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8 relative">
-                <SignalRow label="Nationality" signal={matchBreakdown.nationality} icon={Globe} />
-                <SignalRow label="Degree Level" signal={matchBreakdown.degreeLevel} icon={GraduationCap} />
-                <SignalRow label="Field of Study" signal={matchBreakdown.field} icon={BookOpen} />
-                {matchBreakdown.gpa.label && <SignalRow label="Academic Record" signal={matchBreakdown.gpa} icon={BarChart} />}
+            {scholarship.eligibilityRaw && (
+              <div className="mt-4">
+                <button 
+                  onClick={() => setShowOriginalEligibility(!showOriginalEligibility)}
+                  className="flex items-center gap-1.5 text-[13px] font-ui text-clay hover:text-clay-light transition-colors"
+                >
+                  <span>Original eligibility text</span>
+                  <motion.div animate={{ rotate: showOriginalEligibility ? 180 : 0 }}>
+                    <CaretDown size={14} weight="bold" />
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {showOriginalEligibility && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 bg-surface border border-border rounded-md p-4 text-[13px] font-ui text-ink-secondary leading-[1.6] whitespace-pre-wrap">
+                        {scholarship.eligibilityRaw}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </section>
-
-            {/* Description */}
-            <section>
-              <h2 className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-400 mb-8 flex items-center gap-3">
-                <span className="w-8 h-px bg-gray-200" />
-                About this opportunity
-              </h2>
-              <div className="prose prose-sm max-w-none">
-                {scholarship.description ? (
-                  <p className="text-lg text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-wrap font-medium">
-                    {scholarship.description}
-                  </p>
-                ) : (
-                  <p className="text-lg text-gray-400 italic text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                    No detailed description available.
-                  </p>
-                )}
-              </div>
-            </section>
+            )}
           </div>
+        </div>
 
-          {/* Right Column: Sidebar Stats & Actions */}
-          <aside className="hidden lg:block w-96 shrink-0">
-            <div className="sticky top-28 space-y-6">
-              <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-2xl shadow-black/5 space-y-8">
-                <div className="space-y-6">
-                  <SidebarStat label="Financial Value" value={fundingValue} icon={Wallet} />
-                  <SidebarStat label="Application Deadline" value={formattedDeadline} icon={Calendar} urgency={!!scholarship.deadline} />
-                  <SidebarStat label="Academic Level" value={scholarship.eligibleDegrees.join(", ")} icon={GraduationCap} />
-                  <SidebarStat label="Location Eligibility" value={scholarship.eligibleNationalities?.join(", ") || "Worldwide"} icon={Globe} />
-                </div>
+        {/* ABOUT SECTION */}
+        <div className="mt-10 border-t border-border pt-10">
+          <div className="text-[11px] font-ui uppercase tracking-[0.1em] text-ink-tertiary mb-4">
+            About this scholarship
+          </div>
+          
+          {scholarship.description ? (
+            <div className="text-[15px] font-ui text-ink-secondary leading-[1.7] whitespace-pre-wrap">
+              {scholarship.description}
+            </div>
+          ) : (
+            <div className="text-[15px] font-ui text-ink-tertiary italic">
+              See the official scholarship page for full details.
+            </div>
+          )}
 
-                <div className="pt-8 border-t border-gray-50 flex flex-col gap-4">
-                  <button
-                    onClick={handleApplyNow}
-                    className="w-full bg-[var(--color-primary)] text-white rounded-2xl h-14 text-sm font-black uppercase tracking-[0.2em] hover:brightness-110 transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-xl shadow-[var(--color-primary)]/20"
-                  >
-                    Apply Now
-                    <ExternalLink size={18} />
-                  </button>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleSave}
-                      className={cn(
-                        "flex-1 h-14 rounded-2xl border flex items-center justify-center gap-2 font-bold text-xs transition-all active:scale-95",
-                        isSaved ? "bg-[var(--color-primary-surface)] border-[var(--color-primary-border)] text-[var(--color-primary)]" : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
-                      )}
-                    >
-                      <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
-                      {isSaved ? "Saved" : "Save"}
-                    </button>
-                    <button
-                      onClick={handleShare}
-                      className="w-14 h-14 rounded-2xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-all active:scale-95"
-                    >
-                      <Share2 size={20} />
-                    </button>
-                  </div>
-                </div>
+          {scholarship.fieldsOfStudy && scholarship.fieldsOfStudy.length > 0 && (
+            <div className="mt-8">
+              <div className="text-[11px] font-ui uppercase tracking-[0.1em] text-ink-tertiary mb-3">
+                Fields covered
               </div>
-
-              {/* Security Nudge */}
-              <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-blue-500 shadow-sm shrink-0">
-                  <Star size={20} />
-                </div>
-                <p className="text-[11px] text-blue-700/80 font-bold leading-relaxed">
-                  Verified by ScholarMatch AI. We ensure all external links are secure and directly related to the provider.
-                </p>
+              <div className="flex flex-wrap gap-2">
+                {scholarship.fieldsOfStudy.map((field) => (
+                  <span 
+                    key={field} 
+                    className="bg-surface-hover text-ink-secondary border border-border rounded-full px-3 py-1 text-[13px] font-ui"
+                  >
+                    {field}
+                  </span>
+                ))}
               </div>
             </div>
-          </aside>
+          )}
         </div>
-      </main>
-
-  </div>
-);
-}
-
-function StatCard({ label, value, urgency = false, date = null, icon: Icon }: { label: string; value: string; urgency?: boolean; date?: string | null; icon?: any }) {
-  const getUrgencyStyles = () => {
-    if (!urgency || !date) return "text-[var(--color-text-primary)]";
-    const d = new Date(date);
-    const now = new Date();
-    const diffDays = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 7) return "text-[var(--color-red)]";
-    if (diffDays <= 30) return "text-[var(--color-amber)]";
-    return "text-[var(--color-text-primary)]";
-  };
-
-  return (
-    <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-lg)] p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-2">
-        {Icon && <Icon size={12} className="text-[var(--color-text-tertiary)]" />}
-        <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-tertiary)] font-black">{label}</p>
       </div>
-      <p className={cn("text-sm font-black truncate", getUrgencyStyles())}>{value}</p>
-    </div>
-  );
-}
 
-function SignalRow({ label, signal, icon: Icon }: { label: string; signal: MatchSignal; icon: any }) {
-  const getStatusIcon = () => {
-    if (signal.partial) return <AlertCircle size={20} className="text-[var(--color-amber)]" />;
-    if (signal.pass) return <CheckCircle2 size={20} className="text-[var(--color-primary)]" />;
-    return <XCircle size={20} className="text-[var(--color-red)]" />;
-  };
+      {/* STICKY BOTTOM CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border">
+        <div className="max-w-[720px] mx-auto px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-12 h-12 shrink-0 rounded-full border border-border flex items-center justify-center text-ink hover:bg-surface-hover transition-colors"
+          >
+            <motion.div
+              initial={false}
+              animate={{ scale: isSaved ? [1, 1.2, 1] : 1 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <BookmarkSimple size={22} weight={isSaved ? "fill" : "regular"} className={isSaved ? "text-moss" : ""} />
+            </motion.div>
+          </button>
+          
+          <button
+            onClick={handleApplyNow}
+            className="flex-1 h-12 bg-moss text-white rounded-full font-ui font-medium text-[15px] flex items-center justify-center gap-2 hover:bg-moss-dark transition-colors"
+          >
+            Apply now &rarr;
+          </button>
 
-  return (
-    <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-xl bg-white border border-[var(--color-border)] flex items-center justify-center text-[var(--color-text-tertiary)] shrink-0 shadow-sm">
-        <Icon size={18} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <p className="text-[11px] font-black text-[var(--color-text-primary)] uppercase tracking-wider">{label}</p>
-          {getStatusIcon()}
+          <button
+            onClick={handleShare}
+            className="w-12 h-12 shrink-0 rounded-full border border-border flex items-center justify-center text-ink hover:bg-surface-hover transition-colors"
+          >
+            <ShareNetwork size={22} weight="regular" />
+          </button>
         </div>
-        <p className="text-[13px] text-[var(--color-text-secondary)] font-medium leading-snug">{signal.label}</p>
       </div>
     </div>
   );
 }
-
-function SidebarStat({ label, value, icon: Icon, urgency = false }: { label: string; value: string; icon: any; urgency?: boolean }) {
-  return (
-    <div className="flex items-start gap-4">
-      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0 shadow-sm">
-        <Icon size={18} />
-      </div>
-      <div>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-        <p className={cn("text-sm font-extrabold leading-snug", urgency ? "text-[var(--color-red)]" : "text-[var(--color-text-primary)]")}>
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const Wallet = (props: any) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-);

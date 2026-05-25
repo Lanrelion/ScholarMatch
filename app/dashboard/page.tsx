@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ProfileSummaryCard } from "@/components/dashboard/ProfileSummaryCard";
 import { DiscoveryFeed } from "@/components/dashboard/DiscoveryFeed";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { scoreScholarship } from "@/lib/matching/scoreScholarship";
 
 export default async function DashboardPage() {
@@ -72,14 +71,14 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="flex flex-col flex-1">
       <DashboardHeader firstName={profile.firstName} />
       <ProfileSummaryCard 
         nationality={profile.nationality}
         degreeLevel={profile.currentDegree}
         fieldOfStudy={profile.fieldOfStudy}
       />
-      <main className="flex-1 overflow-hidden pb-20">
+      <main className="flex-1 overflow-hidden">
         <DiscoveryFeed 
           initialScholarships={initialScholarships}
           initialSavedIds={initialSavedIds}
@@ -87,7 +86,6 @@ export default async function DashboardPage() {
           profile={JSON.parse(JSON.stringify(profile))}
         />
       </main>
-      <BottomNav />
     </div>
   );
 }

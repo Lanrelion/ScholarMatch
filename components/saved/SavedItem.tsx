@@ -2,22 +2,25 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Award, Trash2, ChevronRight, Clock } from "lucide-react";
-import { Scholarship } from "@prisma/client";
+import { motion } from "framer-motion";
+import { Medal, ArrowRight, Trash } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
-interface Props {
-  item: {
-    id: string;
-    scholarship: Scholarship;
-    matchScore: number;
-  };
+interface SavedItemProps {
+  item: any; // { id: string, scholarship: ScholarshipWithMatch, changeAlerted: boolean }
   onUnsave: (id: string) => void;
 }
 
-export default function SavedItem({ item, onUnsave }: Props) {
+export default function SavedItem({ item, onUnsave }: SavedItemProps) {
   const router = useRouter();
   const { scholarship } = item;
+
+  const now = new Date();
+  const deadline = scholarship.deadline ? new Date(scholarship.deadline) : null;
+  const daysLeft = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+  const isUrgent = daysLeft !== null && daysLeft <= 7;
+  const isWarning = daysLeft !== null && daysLeft > 7 && daysLeft <= 30;
 
   const handleUnsave = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,67 +29,76 @@ export default function SavedItem({ item, onUnsave }: Props) {
       if (res.ok) {
         onUnsave(item.id);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const getDeadlineInfo = () => {
-    if (!scholarship.deadline) return { label: "Open deadline", color: "text-[var(--color-text-tertiary)]" };
-    const date = new Date(scholarship.deadline);
-    const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / 86400000);
-
-    if (diffDays <= 0) return { label: "Closed", color: "text-[var(--color-red)]" };
-    if (diffDays <= 7) return { label: `${diffDays}d left`, color: "text-[var(--color-red)]" };
-    if (diffDays <= 30) return { label: `${diffDays}d left`, color: "text-[var(--color-amber)]" };
-    
-    return { 
-      label: date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }), 
-      color: "text-[var(--color-text-secondary)]" 
-    };
+  const getDeadlineText = () => {
+    if (daysLeft === null) return "Open deadline";
+    if (daysLeft < 0) return "Closed";
+    return `${daysLeft} days left`;
   };
 
-  const deadline = getDeadlineInfo();
+  const getDeadlineColorClass = () => {
+    if (isUrgent) return "text-urgent font-medium";
+    if (isWarning) return "text-warning";
+    return "text-ink-tertiary";
+  };
 
   return (
-    <div 
-      onClick={() => router.push(`/scholarship/${scholarship.id}?from=saved`)}
-      className="flex items-center gap-3 px-4 py-4 cursor-pointer active:bg-[var(--color-surface)] transition-colors group"
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] as any }}
+      onClick={() => router.push(`/scholarship/${scholarship.id}`)}
+      className="group flex flex-row items-center w-full bg-surface border border-border rounded-xl p-4 md:px-5 mb-2 cursor-pointer transition-all duration-180 ease-primary hover:border-border-strong hover:shadow-[0_4px_20px_rgba(22,21,20,0.06)]"
     >
-      {/* Icon */}
-      <div className="w-11 h-11 rounded-[var(--radius-lg)] bg-[var(--color-primary-surface)] border border-[var(--color-primary-border)] flex-shrink-0 flex items-center justify-center text-[var(--color-primary)]">
-        <Award size={20} />
+      {/* LEFT — Icon square */}
+      <div 
+        className={cn(
+          "shrink-0 w-12 h-12 rounded-md flex items-center justify-center mr-4 transition-colors",
+          isUrgent ? "bg-urgent-surface" : "bg-moss-light",
+          isUrgent && "animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+        )}
+      >
+        <Medal size={22} weight="fill" className={isUrgent ? "text-urgent" : "text-moss"} />
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-bold text-[var(--color-text-primary)] truncate leading-tight mb-1">
+      {/* MIDDLE — Content */}
+      <div className="flex-1 min-w-0 mr-4">
+        <h3 className="text-[14px] font-ui font-medium text-ink whitespace-nowrap overflow-hidden text-ellipsis">
           {scholarship.title}
         </h3>
-        <div className="flex items-center gap-2">
-          <div className={cn("flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider", deadline.color)}>
-            <Clock size={12} strokeWidth={3} />
-            {deadline.label}
-          </div>
-          <span className="text-[var(--color-border-strong)]">•</span>
-          <span className="text-[11px] font-black text-[var(--color-primary)] uppercase tracking-widest">
-            {Math.round(item.matchScore * 100)}% Match
+        <div className="flex items-center gap-2 mt-1">
+          <span className={cn("text-[12px]", getDeadlineColorClass())}>
+            {getDeadlineText()}
+          </span>
+          <span className="text-[12px] text-border">·</span>
+          <span className="text-[12px] font-ui font-medium text-moss">
+            {Math.round(item.matchScore * 100)}% match
           </span>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={handleUnsave}
-          aria-label="Remove from saved"
-          className="w-10 h-10 flex items-center justify-center text-[var(--color-text-tertiary)] hover:text-[var(--color-red)] transition-colors active:scale-90"
+      {/* RIGHT — Actions */}
+      <div className="shrink-0 flex flex-col gap-1.5">
+        <button 
+          className="w-9 h-9 rounded-md bg-transparent hover:bg-surface-hover flex items-center justify-center text-ink-tertiary transition-colors"
+          aria-label="View Details"
         >
-          <Trash2 size={18} />
+          <ArrowRight size={16} weight="bold" />
         </button>
-        <div className="text-[var(--color-border-strong)] group-hover:translate-x-0.5 transition-transform">
-          <ChevronRight size={18} />
-        </div>
+        <button 
+          onClick={handleUnsave}
+          className="w-9 h-9 rounded-md bg-transparent hover:bg-surface-hover flex items-center justify-center text-ink-tertiary hover:text-urgent transition-colors"
+          aria-label="Remove saved item"
+        >
+          <Trash size={16} weight="fill" />
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
