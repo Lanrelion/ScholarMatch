@@ -12,7 +12,21 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const isPendingTab = tab === "pending";
 
-  const scholarships = await db.scholarship.findMany({
+  type ScholarshipRow = {
+    id: string;
+    title: string;
+    provider: string | null;
+    deadline: Date | null;
+    isActive: boolean;
+    verified: boolean;
+    lastCrawledAt: Date | null;
+    sourceUrl: string | null;
+    eligibleDegrees: string[];
+    fieldsOfStudy: string[];
+    _count: { savedBy: number };
+  };
+
+  const scholarships = (await db.scholarship.findMany({
     where: isPendingTab ? { isActive: false, verified: false } : undefined,
     orderBy: { createdAt: "desc" },
     select: {
@@ -28,25 +42,11 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       fieldsOfStudy: true,
       _count: { select: { savedBy: true } }
     }
-  });
+  })) as ScholarshipRow[];
 
-  type ScholarshipRow = {
-    id: string;
-    title: string;
-    provider: string | null;
-    deadline: Date | null;
-    isActive: boolean;
-    verified: boolean;
-    lastCrawledAt: Date | null;
-    sourceUrl: string | null;
-    eligibleDegrees: string[];
-    fieldsOfStudy: string[];
-    _count: { savedBy: number };
-  };
-
-  const totalSaves = (scholarships as ScholarshipRow[]).reduce((acc: number, s: ScholarshipRow) => acc + s._count.savedBy, 0);
-  const activeCount = (scholarships as ScholarshipRow[]).filter((s: ScholarshipRow) => s.isActive).length;
-  const verifiedCount = (scholarships as ScholarshipRow[]).filter((s: ScholarshipRow) => s.verified).length;
+  const totalSaves = scholarships.reduce((acc: number, s) => acc + s._count.savedBy, 0);
+  const activeCount = scholarships.filter(s => s.isActive).length;
+  const verifiedCount = scholarships.filter(s => s.verified).length;
 
   return (
     <div>
