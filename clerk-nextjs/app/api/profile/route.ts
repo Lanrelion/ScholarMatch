@@ -1,17 +1,12 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkRateLimit } from "@/lib/checkRateLimit";
-import { authLimiter } from "@/lib/ratelimit";
 
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const limited = await checkRateLimit(authLimiter, userId);
-  if (limited) return limited;
 
   const profile = await db.profile.findUnique({
     where: { userId },
@@ -30,9 +25,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const limited = await checkRateLimit(authLimiter, userId);
-  if (limited) return limited;
-
   try {
     const body = await req.json();
     const {
@@ -47,11 +39,22 @@ export async function POST(req: Request) {
       needsFinancialAid,
       workExperienceYears,
       countryOfStudy,
+      email,
     } = body;
 
     if (!firstName || !nationality || !currentDegree || !fieldOfStudy || needsFinancialAid == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    // Ensure User record exists before upserting Profile
+    await db.user.upsert({
+      where: { id: userId },
+      update: {},
+      create: {
+        id: userId,
+        email: email || `${userId}@example.com`,
+      },
+    });
 
     const profile = await db.profile.upsert({
       where: { userId },

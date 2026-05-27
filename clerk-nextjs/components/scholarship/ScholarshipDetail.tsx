@@ -1,8 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ArrowLeft, 
+  BookmarkSimple, 
+  ShareNetwork, 
+  Info, 
+  CheckCircle, 
+  XCircle, 
+  WarningCircle, 
+  CaretDown 
+} from "@phosphor-icons/react";
 import { ScholarshipWithMatch, MatchSignal } from "@/types/scholarship";
+import { cn } from "@/lib/utils";
 
 interface Props {
   scholarship: ScholarshipWithMatch;
@@ -12,57 +24,49 @@ interface Props {
   savedItemId?: string;
 }
 
-export default function ScholarshipDetail({
+export function ScholarshipDetail({
   scholarship,
   matchScore,
   matchBreakdown,
   initialSaved = false,
-  savedItemId,
+  savedItemId: initialSavedId,
 }: Props) {
   const router = useRouter();
   const [isSaved, setIsSaved] = useState(initialSaved);
-  const [savedId, setSavedId] = useState(savedItemId);
+  const [savedId, setSavedId] = useState(initialSavedId);
   const [isSaving, setIsSaving] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showOriginalEligibility, setShowOriginalEligibility] = useState(false);
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/dashboard");
+  // Animate progress bar on mount
+  const [progressWidth, setProgressWidth] = useState(0);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setProgressWidth(Math.round(matchScore * 100));
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [matchScore]);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 2000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [toastMessage]);
 
   const handleShare = async () => {
-    const formattedDeadline = scholarship.deadline
-      ? new Date(scholarship.deadline).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
-      : "Open deadline";
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-    const shareUrl = `${appUrl}/scholarship/${scholarship.id}`;
-
     const shareData = {
       title: scholarship.title,
-      text: `${scholarship.title} — ${scholarship.provider}. Apply by ${formattedDeadline}. Find your match on ScholarMatch:`,
-      url: shareUrl,
+      text: `${scholarship.title} — ${scholarship.provider}.`,
+      url: window.location.href,
     };
-
     if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.error("Share failed", err);
-      }
+      try { await navigator.share(shareData); } catch (err) {}
     } else {
       try {
-        await navigator.clipboard.writeText(shareUrl);
-        alert("Link copied!");
-      } catch (err) {
-        console.error("Clipboard failed", err);
-      }
+        await navigator.clipboard.writeText(shareData.url);
+        setToastMessage("Link copied to clipboard");
+      } catch (err) {}
     }
   };
 
@@ -75,13 +79,9 @@ export default function ScholarshipDetail({
         if (res.ok) {
           setIsSaved(false);
           setSavedId(undefined);
-        } else {
-          setIsSaved(true);
-          alert("Could not remove. Try again.");
+          setToastMessage("Removed from saved");
         }
       } else {
-        // Optimistic toggle
-        setIsSaved(true);
         const res = await fetch("/api/saved", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -94,14 +94,12 @@ export default function ScholarshipDetail({
         if (res.ok) {
           const data = await res.json();
           setSavedId(data.id);
-        } else {
-          setIsSaved(false);
-          alert("Could not save. Try again.");
+          setIsSaved(true);
+          setToastMessage("Saved scholarship");
         }
       }
     } catch (err) {
-      setIsSaved(!isSaved);
-      alert("Network error. Try again.");
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
@@ -118,210 +116,322 @@ export default function ScholarshipDetail({
     }
   };
 
-  const getDeadlineStyles = () => {
-    if (!scholarship.deadline) return "text-gray-800";
-    const date = new Date(scholarship.deadline);
-    const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays <= 7) return "text-[#A32D2D] font-medium";
-    if (diffDays <= 30) return "text-[#854F0B] font-medium";
-    return "text-gray-800";
-  };
-
-  const formattedDeadline = scholarship.deadline
-    ? new Date(scholarship.deadline).toLocaleDateString("en-US", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "Open deadline";
-
+  // Parsing values
+  const fundingType = scholarship.eligibilityParsed?.fundingType === "full" ? "FULLY FUNDED" : "PARTIAL FUNDING";
+  const degreeLevel = scholarship.eligibleDegrees?.[0]?.toUpperCase() || "ANY LEVEL";
+  
   const fundingValue = scholarship.eligibilityParsed?.fundingType === "full"
     ? "Fully funded"
     : scholarship.amount
     ? new Intl.NumberFormat("en-US", { style: "currency", currency: scholarship.currency || "USD" }).format(scholarship.amount)
-    : "See details";
+    : "Variable funding";
 
-  const appRouteLabel = scholarship.applicationRoute === "DIRECT"
-    ? "Direct application"
-    : scholarship.applicationRoute === "ADMISSION_FIRST"
-    ? "Admission required first"
-    : "Auto-considered on admission";
+  const formattedDeadline = scholarship.deadline
+    ? new Date(scholarship.deadline).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "Open / Rolling";
+
+  const getDeadlineColor = () => {
+    if (!scholarship.deadline) return "text-ink";
+    const days = Math.ceil((new Date(scholarship.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    if (days <= 7) return "text-urgent";
+    if (days <= 30) return "text-warning";
+    return "text-ink";
+  };
+
+  const appMethod = scholarship.eligibilityParsed?.applicationMethod;
+  const appValue = appMethod === "ADMISSION_FIRST" ? "Admission required first"
+                 : appMethod === "AUTOMATIC" ? "Auto-considered on admission"
+                 : "Apply directly";
+
+  // Match signals
+  const signals = [
+    { key: "Nationality", data: matchBreakdown.nationality },
+    { key: "Degree level", data: matchBreakdown.degreeLevel },
+    { key: "Field", data: matchBreakdown.field },
+    { key: "GPA", data: matchBreakdown.gpa },
+    { key: "Financial need", data: matchBreakdown.financialNeed },
+    { key: "Work experience", data: matchBreakdown.workExperience }
+  ];
+
+  const getSignalIcon = (signal: MatchSignal) => {
+    if (signal.partial) return <WarningCircle size={20} weight="fill" className="text-warning mt-[2px] shrink-0" />;
+    if (signal.pass) return <CheckCircle size={20} weight="fill" className="text-moss mt-[2px] shrink-0" />;
+    return <XCircle size={20} weight="fill" className="text-urgent mt-[2px] shrink-0" />;
+  };
+
+  // Unsplash fallback logic
+  const hostCountry = scholarship.eligibilityParsed?.hostCountry || scholarship.eligibilityParsed?.universityCountry || "";
+  const imageUrl = hostCountry ? `https://source.unsplash.com/1200x400/?${encodeURIComponent(hostCountry)},university,landscape` : null;
 
   return (
-    <div className="min-h-screen bg-white pb-24 flex flex-col items-center">
-      <div className="w-full max-w-2xl">
-        {/* SECTION 1: HEADER */}
-        <section className="px-4 pt-4 pb-3">
-          <button
-            onClick={handleBack}
-            className="text-sm text-gray-500 font-normal hover:text-gray-800 transition-colors mb-3 flex items-center gap-1"
+    <div className="min-h-screen bg-bg relative">
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className="fixed top-24 left-1/2 z-[100] bg-ink text-white text-[12px] font-ui font-medium px-4 py-2 rounded-full shadow-lg"
           >
-            ← Back to results
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* HERO SECTION */}
+      <div 
+        className="w-full h-[280px] relative"
+        style={{
+          background: `linear-gradient(135deg, var(--color-moss) 0%, var(--color-moss-dark) 60%, var(--color-clay) 100%)`
+        }}
+      >
+        {imageUrl && (
+          <img 
+            src={imageUrl} 
+            alt="Location" 
+            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        )}
+        
+        {/* Grain overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay grain-overlay" />
+        
+        {/* Top gradient overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 50%)" }}
+        />
+
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="absolute top-5 left-5 h-10 px-4 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 rounded-full flex items-center gap-2 text-white transition-colors z-10"
+        >
+          <ArrowLeft size={16} weight="bold" />
+          <span className="font-ui font-medium text-[13px]">Back</span>
+        </button>
+
+        {/* Actions */}
+        <div className="absolute top-5 right-5 flex items-center gap-2 z-10">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+          >
+            <BookmarkSimple size={20} weight={isSaved ? "fill" : "regular"} />
           </button>
-          <h1 className="text-xl font-medium text-gray-900 leading-tight mb-1">
+          <button
+            onClick={handleShare}
+            className="w-10 h-10 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+          >
+            <ShareNetwork size={20} weight="regular" />
+          </button>
+        </div>
+      </div>
+
+      {/* CONTENT SECTION */}
+      <div className="max-w-[720px] mx-auto px-6 pt-10 pb-[120px]">
+        
+        {/* HEADER BLOCK */}
+        <header>
+          <div className="text-[11px] font-ui font-medium uppercase tracking-[0.1em] text-moss mb-3">
+            {fundingType} · {degreeLevel}
+          </div>
+          <h1 className="text-[clamp(1.75rem,3.5vw,2.5rem)] font-editorial font-normal text-ink leading-[1.2] mb-3">
             {scholarship.title}
           </h1>
-          <p className="text-sm text-gray-500 font-normal">
-            {scholarship.provider} · {scholarship.sourceDomain}
-          </p>
-        </section>
+          <div className="text-[14px] font-ui text-ink-secondary flex items-center flex-wrap gap-x-1.5">
+            <span className="font-medium text-ink">{scholarship.provider}</span>
+            <span>·</span>
+            <span>{scholarship.sourceDomain}</span>
+            {scholarship.lastChangedAt && (
+              <>
+                <span className="text-ink-tertiary ml-2">·</span>
+                <span className="text-[12px] text-ink-tertiary ml-1.5">
+                  Verified {Math.max(0, Math.floor((Date.now() - new Date(scholarship.lastChangedAt).getTime()) / 86400000))} days ago
+                </span>
+              </>
+            )}
+          </div>
+        </header>
 
-        {/* SECTION 2: KEY STATS */}
-        <section className="px-4 py-4 border-b border-gray-100 grid grid-cols-2 gap-3">
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Funding</p>
-            <p className="text-sm font-medium text-gray-900">{fundingValue}</p>
+        {/* STATS GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">Funding</div>
+            <div className="text-[16px] font-ui font-medium text-ink truncate">{fundingValue}</div>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Deadline</p>
-            <p className={`text-sm ${getDeadlineStyles()}`}>{formattedDeadline}</p>
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">Deadline</div>
+            <div className={cn("text-[16px] font-ui font-medium truncate", getDeadlineColor())}>{formattedDeadline}</div>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">Study level</p>
-            <p className="text-sm font-medium text-gray-900">
-              {scholarship.eligibleDegrees.map(d => d.charAt(0) + d.slice(1).toLowerCase()).join(" · ")}
-            </p>
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">Study Level</div>
+            <div className="text-[16px] font-ui font-medium text-ink truncate">
+              {scholarship.eligibleDegrees.join(" · ") || "Any"}
+            </div>
           </div>
-          <div className="bg-gray-50 rounded-xl p-3">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-1">How to apply</p>
-            <p className="text-sm font-medium text-gray-900">{appRouteLabel}</p>
+          <div className="bg-surface border border-border rounded-lg p-4 px-5">
+            <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary mb-1">How to apply</div>
+            <div className="text-[16px] font-ui font-medium text-ink truncate">{appValue}</div>
           </div>
-        </section>
+        </div>
 
-        {scholarship.applicationRoute === "ADMISSION_FIRST" && (
-          <div className="mx-4 mt-4 bg-[#E6F1FB] rounded-xl p-3 flex items-start gap-2">
-            <i className="ti-info-circle text-[#185FA5] mt-0.5"></i>
-            <p className="text-xs text-[#0C447C]">
+        {appMethod === "ADMISSION_FIRST" && (
+          <div className="mt-3 bg-[#E6F1FB] rounded-lg p-3.5 px-4.5 flex items-start gap-2.5">
+            <Info size={18} weight="fill" className="text-[#185FA5] shrink-0 mt-[1px]" />
+            <p className="text-[13px] font-ui text-[#0C447C] leading-snug">
               You must be admitted to this university before applying for this scholarship.
             </p>
           </div>
         )}
 
-        {/* SECTION 3: MATCH SCORE */}
-        <section className="px-4 py-4 border-b border-gray-100">
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-sm font-medium text-gray-900">Your match</p>
-            <p className="text-lg font-medium text-[#0F6E56]">{Math.round(matchScore * 100)}%</p>
+        {/* MATCH SCORE SECTION */}
+        <div className="mt-10 border-t border-border pt-10">
+          <div className="flex items-end justify-between mb-3">
+            <h3 className="text-[14px] font-ui font-medium text-ink">Your compatibility</h3>
+            <div className="text-[48px] font-editorial font-light text-moss leading-none">
+              {Math.round(matchScore * 100)}%
+            </div>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full w-full overflow-hidden mb-6">
-            <div
-              className="h-full bg-[#1D9E75] rounded-full transition-all duration-700 ease-out"
-              style={{ width: `${matchScore * 100}%` }}
+
+          <div className="w-full h-[6px] bg-border rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-moss rounded-full transition-[width] duration-1000"
+              style={{ width: `${progressWidth}%`, transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
             />
           </div>
 
-          <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-3">
-            Eligibility breakdown
-          </p>
+          <div className="mt-6">
+            <div className="text-[11px] font-ui uppercase tracking-[0.1em] text-ink-tertiary mb-2">
+              Why you match
+            </div>
+            
+            <div className="flex flex-col">
+              {signals.map((sig, idx) => (
+                <div 
+                  key={sig.key} 
+                  className={cn(
+                    "flex items-start gap-3.5 py-3.5",
+                    idx !== signals.length - 1 && "border-b border-border"
+                  )}
+                >
+                  {getSignalIcon(sig.data)}
+                  <div>
+                    <div className="text-[14px] font-ui font-medium text-ink">
+                      {sig.key}
+                    </div>
+                    <div className="text-[13px] font-ui text-ink-secondary mt-[2px]">
+                      {sig.data.label}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          <div className="flex flex-col">
-            <SignalRow label="Nationality" signal={matchBreakdown.nationality} />
-            <SignalRow label="Degree level" signal={matchBreakdown.degreeLevel} />
-            <SignalRow label="Field of study" signal={matchBreakdown.field} />
-            {matchBreakdown.gpa?.label && <SignalRow label="GPA" signal={matchBreakdown.gpa} />}
-            <SignalRow label="Financial need" signal={matchBreakdown.financialNeed} />
-            {matchBreakdown.targetCountry && <SignalRow label="Destination" signal={matchBreakdown.targetCountry} />}
-            {matchBreakdown.programMatch && <SignalRow label="Program" signal={matchBreakdown.programMatch} />}
+            {scholarship.eligibilityRaw && (
+              <div className="mt-4">
+                <button 
+                  onClick={() => setShowOriginalEligibility(!showOriginalEligibility)}
+                  className="flex items-center gap-1.5 text-[13px] font-ui text-clay hover:text-clay-light transition-colors"
+                >
+                  <span>Original eligibility text</span>
+                  <motion.div animate={{ rotate: showOriginalEligibility ? 180 : 0 }}>
+                    <CaretDown size={14} weight="bold" />
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {showOriginalEligibility && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 bg-surface border border-border rounded-md p-4 text-[13px] font-ui text-ink-secondary leading-[1.6] whitespace-pre-wrap">
+                        {scholarship.eligibilityRaw}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
+        </div>
 
-          <div className="bg-gray-50 rounded-xl p-3 mt-4">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-1">
-              Original eligibility text
-            </p>
-            <p className="text-xs text-gray-500 leading-relaxed italic">
-              "Source requirement: {scholarship.eligibilityRaw}"
-            </p>
+        {/* ABOUT SECTION */}
+        <div className="mt-10 border-t border-border pt-10">
+          <div className="text-[11px] font-ui uppercase tracking-[0.1em] text-ink-tertiary mb-4">
+            About this scholarship
           </div>
-        </section>
-
-        {/* SECTION 4: ABOUT */}
-        <section className="px-4 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-medium text-gray-900 mb-2">About this scholarship</h2>
+          
           {scholarship.description ? (
-            <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-wrap">
+            <div className="text-[15px] font-ui text-ink-secondary leading-[1.7] whitespace-pre-wrap">
               {scholarship.description}
-            </p>
+            </div>
           ) : (
-            <p className="text-sm text-gray-400 italic">
+            <div className="text-[15px] font-ui text-ink-tertiary italic">
               See the official scholarship page for full details.
-            </p>
+            </div>
           )}
 
           {scholarship.fieldsOfStudy && scholarship.fieldsOfStudy.length > 0 && (
-            <div className="mt-4">
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mb-2">
+            <div className="mt-8">
+              <div className="text-[11px] font-ui uppercase tracking-[0.1em] text-ink-tertiary mb-3">
                 Fields covered
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {scholarship.fieldsOfStudy.map((f) => (
-                  <span
-                    key={f}
-                    className="bg-gray-100 text-gray-600 text-[10px] font-medium px-2.5 py-1 rounded-full"
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {scholarship.fieldsOfStudy.map((field) => (
+                  <span 
+                    key={field} 
+                    className="bg-surface-hover text-ink-secondary border border-border rounded-full px-3 py-1 text-[13px] font-ui"
                   >
-                    {f}
+                    {field}
                   </span>
                 ))}
               </div>
             </div>
           )}
-        </section>
+        </div>
       </div>
 
-      {/* SECTION 5: STICKY CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center gap-2 z-50">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          aria-label="Save scholarship"
-          className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-colors active:bg-gray-50 ${
-            isSaved ? "bg-[#E1F5EE] border-[#1D9E75]" : "border-gray-200"
-          }`}
-        >
-          {isSaving ? (
-            <i className="ti-loader-2 text-[#1D9E75] animate-spin text-xl"></i>
-          ) : (
-            <i
-              className={`${
-                isSaved ? "ti-bookmark text-[#1D9E75]" : "ti-bookmark text-gray-400"
-              } text-xl`}
-            ></i>
-          )}
-        </button>
+      {/* STICKY BOTTOM CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border">
+        <div className="max-w-[720px] mx-auto px-4 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center gap-2">
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-12 h-12 shrink-0 rounded-full border border-border flex items-center justify-center text-ink hover:bg-surface-hover transition-colors"
+          >
+            <motion.div
+              initial={false}
+              animate={{ scale: isSaved ? [1, 1.2, 1] : 1 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              <BookmarkSimple size={22} weight={isSaved ? "fill" : "regular"} className={isSaved ? "text-moss" : ""} />
+            </motion.div>
+          </button>
+          
+          <button
+            onClick={handleApplyNow}
+            className="flex-1 h-12 bg-moss text-white rounded-full font-ui font-medium text-[15px] flex items-center justify-center gap-2 hover:bg-moss-dark transition-colors"
+          >
+            Apply now &rarr;
+          </button>
 
-        <button
-          onClick={handleApplyNow}
-          className="flex-1 bg-[#1D9E75] text-white rounded-xl h-12 text-sm font-medium hover:bg-[#0F6E56] transition-colors active:scale-[0.98]"
-        >
-          Apply now
-        </button>
-
-        <button
-          onClick={handleShare}
-          aria-label="Share scholarship"
-          className="w-12 h-12 rounded-xl border border-gray-200 flex items-center justify-center transition-colors active:bg-gray-50"
-        >
-          <i className="ti-share text-gray-400 text-xl"></i>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SignalRow({ label, signal }: { label: string; signal: MatchSignal }) {
-  let icon = "ti-circle-check text-[#1D9E75]";
-  if (signal.partial) icon = "ti-alert-circle text-[#EF9F27]";
-  else if (!signal.pass) icon = "ti-circle-x text-[#E24B4A]";
-
-  return (
-    <div className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
-      <div className="w-5 shrink-0 mt-0.5">
-        <i className={`${icon} text-lg`}></i>
-      </div>
-      <div>
-        <p className="text-sm font-medium text-gray-700 leading-tight">{label}</p>
-        <p className="text-xs text-gray-500 mt-0.5">{signal.label}</p>
+          <button
+            onClick={handleShare}
+            className="w-12 h-12 shrink-0 rounded-full border border-border flex items-center justify-center text-ink hover:bg-surface-hover transition-colors"
+          >
+            <ShareNetwork size={22} weight="regular" />
+          </button>
+        </div>
       </div>
     </div>
   );

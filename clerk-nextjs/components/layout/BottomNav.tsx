@@ -1,26 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, BookmarkSimple, Bell, User } from "@phosphor-icons/react";
+import { Compass, BookmarkSimple, Bell, User, Clock } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
+import { useNavCounts } from "@/hooks/useNavCounts";
 
-interface Props {
-  savedCount?: number;
-}
-
-export default function BottomNav({ savedCount = 0 }: Props) {
+export function BottomNav() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const { fetchCounts, ...counts } = useNavCounts();
+
+  useEffect(() => {
+    setMounted(true);
+    fetchCounts();
+  }, [fetchCounts]);
 
   const tabs = [
-    { id: "discover", label: "Discover", icon: Compass, path: "/dashboard" },
-    { id: "saved", label: "Saved", icon: BookmarkSimple, path: "/saved", count: savedCount },
-    { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts" },
+    { id: "discover", label: "Discover", icon: Compass, path: "/dashboard", count: mounted ? counts.discoverCount : 0 },
+    { id: "saved", label: "Saved", icon: BookmarkSimple, path: "/saved", count: mounted ? counts.savedCount : 0 },
+    { id: "deadlines", label: "Deadlines", icon: Clock, path: "/deadlines", count: mounted ? counts.deadlinesCount : 0 },
+    { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts", count: mounted ? counts.alertsCount : 0 },
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 h-[60px] bg-white/95 backdrop-blur-[8px] border-t border-[var(--color-border)] pb-[env(safe-area-inset-bottom)] flex z-50">
+    <nav className="fixed bottom-0 inset-x-0 h-[64px] bg-bg/80 backdrop-blur-xl border-t border-border pb-[env(safe-area-inset-bottom)] flex z-50 md:hidden">
       {tabs.map((tab) => {
         const isActive = pathname === tab.path || pathname.startsWith(tab.path + "/");
         const Icon = tab.icon;
@@ -29,26 +35,28 @@ export default function BottomNav({ savedCount = 0 }: Props) {
           <Link
             key={tab.id}
             href={tab.path}
-            className="w-1/4 flex flex-col items-center gap-[3px] pt-2 pb-1.5 relative group"
+            className="flex-1 flex flex-col items-center justify-center gap-1 relative group"
           >
             {isActive && (
-              <span className="absolute top-[-2px] w-1 h-1 rounded-full bg-[var(--color-primary)] transition-all duration-200" />
+               <span className="absolute top-0 w-8 h-0.5 rounded-full bg-moss transition-all duration-300" />
             )}
-            <div className="relative flex flex-col items-center">
+            <div className="relative flex flex-col items-center mt-1">
               <Icon 
-                size={20} 
-                className={isActive ? "text-[var(--color-primary)]" : "text-[var(--color-text-tertiary)]"} 
+                size={24} 
+                weight={isActive ? "fill" : "regular"}
+                className={cn("transition-colors", isActive ? "text-moss" : "text-ink-secondary")} 
               />
-              {tab.id === "saved" && (tab.count || 0) > 0 && (
-                <span className="absolute -top-1 -right-2 w-4 h-4 rounded-full bg-[var(--color-primary)] text-white text-[10px] flex items-center justify-center font-bold animate-[scaleIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)]">
-                  {tab.count}
+              {(tab.count || 0) > 0 && (
+                <span className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-urgent text-white text-[10px] flex items-center justify-center font-bold">
+                  {(tab.count || 0) > 99 ? "99+" : tab.count}
                 </span>
               )}
             </div>
             <span 
-              className={`text-[10px] font-medium transition-colors ${
-                isActive ? "text-[var(--color-primary)]" : "text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]"
-              }`}
+              className={cn(
+                "text-[10px] font-ui font-medium transition-colors",
+                isActive ? "text-moss" : "text-ink-secondary group-hover:text-ink"
+              )}
             >
               {tab.label}
             </span>

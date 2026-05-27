@@ -1,6 +1,6 @@
+import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
 
 export async function POST(
   req: Request,
@@ -12,24 +12,27 @@ export async function POST(
   }
 
   const { id } = await params;
-  
+
   try {
-    const current = await db.scholarship.findUnique({
+    const scholarship = await db.scholarship.findUnique({
       where: { id },
       select: { isActive: true }
     });
 
-    if (!current) {
+    if (!scholarship) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     const updated = await db.scholarship.update({
       where: { id },
-      data: { isActive: !current.isActive }
+      data: { 
+        isActive: !scholarship.isActive,
+        verified: true // Mark as verified if activated from admin
+      }
     });
 
     return NextResponse.json({ isActive: updated.isActive });
-  } catch (err: any) {
+  } catch (error) {
     return NextResponse.json({ error: "Failed to toggle" }, { status: 500 });
   }
 }

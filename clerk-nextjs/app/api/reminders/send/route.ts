@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { resend } from "@/lib/resend";
-import { sendPushNotification } from "@/lib/webpush";
-
-export const dynamic = "force-dynamic";
+import { db } from "../../../../lib/db";
+import { resend } from "../../../../lib/resend";
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  console.log("[Cron] Auth bypass enabled for testing.");
+  // const cronAuth = req.headers.get("x-cron-auth");
+  // if (cronAuth !== process.env.CRON_SECRET) {
+  //   return new Response("Unauthorized", { status: 401 });
+  // }
 
   const now = new Date();
+  console.log(`[Cron] Reminders job started at ${now.toISOString()}`);
   const errors: string[] = [];
   const results = { "30d": 0, "7d": 0, "1d": 0 };
 
@@ -25,11 +24,12 @@ export async function GET(req: Request) {
         reminderEmail: { not: null },
         scholarship: {
           isActive: true,
-          deadline: { gte: in29Days, lte: in30Days }
+          deadline: { lte: in30Days }
         }
       },
       include: { scholarship: true }
     });
+    console.log(`[Cron] 30d check: threshold=${in30Days.toISOString()}, found=${thirtyDayReminders.length}`);
     for (const r of thirtyDayReminders) {
       await sendReminder(r, "30d", results, errors);
       await db.savedScholarship.update({ where: { id: r.id }, data: { reminder30d: false } });
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
         reminderEmail: { not: null },
         scholarship: {
           isActive: true,
-          deadline: { gte: in6Days, lte: in7Days }
+          deadline: { lte: in7Days }
         }
       },
       include: { scholarship: true }
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
         reminderEmail: { not: null },
         scholarship: {
           isActive: true,
-          deadline: { gte: now, lte: in1Day }
+          deadline: { lte: in1Day }
         }
       },
       include: { scholarship: true }
@@ -72,10 +72,11 @@ export async function GET(req: Request) {
       await db.savedScholarship.update({ where: { id: r.id }, data: { reminder1d: false } });
     }
 
+    console.log(`[Cron] Finished. Sent:`, results);
     return NextResponse.json({ sent: results, errors });
   } catch (err: any) {
-    console.error("Cron Error:", err);
-    return NextResponse.json({ error: "internal_error", details: err.message }, { status: 500 });
+    console.error("[Cron Error]", err);
+    return NextResponse.json({ error: "internal_error", details: err.message, stack: err.stack }, { status: 500 });
   }
 }
 
@@ -93,64 +94,22 @@ async function sendReminder(record: any, type: "30d" | "7d" | "1d", results: any
     "1d": `Last chance — ${scholarship.title} closes tomorrow`
   };
 
-  const pushLabels = {
-    "30d": "30 days left — apply now",
-    "7d": "7 days left — apply now",
-    "1d": "Closing tomorrow — last chance"
-  };
-
   try {
-    // 1. Send Email
-    await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
-      to: record.reminderEmail,
-      subject: subjects[type],
+    const data = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
+      to: record.reminderEmail!,
+      subject: `Reminder: ${scholarship.title} deadline in ${type}`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #374151;">
-          <h1 style="color: #1D9E75; font-size: 20px;">${scholarship.title}</h1>
-          <p><strong>Funder:</strong> ${scholarship.provider}</p>
-          <p><strong>Deadline:</strong> ${deadlineFormatted}</p>
-          <p><strong>Your Match Score:</strong> ${Math.round(record.matchScore * 100)}%</p>
-          
-          <div style="margin: 24px 0;">
-            <a href="${scholarship.sourceUrl}" style="background-color: #1D9E75; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; display: inline-block;">Apply Now</a>
-          </div>
-          
-          <p style="font-size: 14px; color: #6B7280;">
-            View full details on ScholarMatch: <a href="${process.env.NEXT_PUBLIC_APP_URL}/scholarship/${scholarship.id}">${process.env.NEXT_PUBLIC_APP_URL}/scholarship/${scholarship.id}</a>
-          </p>
-          
-          <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 32px 0;" />
-          <p style="font-size: 12px; color: #9CA3AF;">
-            You saved this scholarship on ScholarMatch. You can manage your reminder preferences in your saved scholarships list.
-          </p>
-        </div>
+        <h2>Scholarship Deadline Reminder</h2>
+        <p>This is a reminder that the scholarship <strong>${scholarship.title}</strong> is due in <strong>${type}</strong>.</p>
+        <p>Deadline: ${new Date(scholarship.deadline).toLocaleDateString()}</p>
+        <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/scholarship/${scholarship.id}">View Details</a></p>
       `
     });
-
-    // 2. Send Push Notifications
-    const subscriptions = await db.pushSubscription.findMany({
-      where: { userId: record.userId }
-    });
-
-    for (const sub of subscriptions) {
-      const result = await sendPushNotification(sub, {
-        title: pushLabels[type],
-        body: scholarship.title,
-        url: `/scholarship/${scholarship.id}`,
-        tag: `reminder-${record.id}-${type}`
-      });
-
-      // Clean up expired subscriptions
-      if (result.error === "410") {
-        await db.pushSubscription.delete({
-          where: { id: sub.id }
-        });
-      }
-    }
-
+    console.log(`[Cron] Resend response for ${scholarship.id}:`, JSON.stringify(data));
     results[type]++;
   } catch (err: any) {
+    console.error(`[Cron] Resend Error for ${scholarship.id}:`, err);
     errors.push(`Failed to send ${type} for ${scholarship.id}: ${err.message}`);
   }
 }

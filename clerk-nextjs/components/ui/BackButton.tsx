@@ -3,25 +3,16 @@
 import { useRouter } from "next/navigation";
 import { CaretLeft } from "@phosphor-icons/react";
 
-export function BackButton({ label = "Back" }: { label?: string }) {
+export function BackButton() {
   const router = useRouter();
-
-  const handleBack = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-    } else {
-      router.push("/dashboard");
-    }
-  };
 
   return (
     <button
-      onClick={handleBack}
-      className="flex items-center gap-1 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors text-sm py-2 pr-4 -ml-1"
-      style={{ minHeight: "44px" }}
+      onClick={() => router.back()}
+      className="btn-icon"
+      aria-label="Go back"
     >
-      <CaretLeft size={16} />
-      {label}
+      <CaretLeft size={20} />
     </button>
   );
 }

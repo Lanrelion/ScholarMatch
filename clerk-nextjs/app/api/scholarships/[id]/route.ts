@@ -1,8 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkRateLimit } from "@/lib/checkRateLimit";
-import { discoveryLimiter } from "@/lib/ratelimit";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,9 +8,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const limited = await checkRateLimit(discoveryLimiter, userId);
-    if (limited) return limited;
 
     const { id } = await params;
 

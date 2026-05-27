@@ -1,86 +1,85 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { MagnifyingGlass, Bell } from "@phosphor-icons/react";
+import Link from "next/link";
+import { useSearchOverlay } from "@/hooks/useSearchOverlay"; // We will create this
 
 interface Props {
   firstName: string | null;
-  nationality: string | null;
-  currentDegree: string | null;
-  fieldOfStudy: string | null;
+  totalMatches?: number;
+  newMatchesCount?: number;
+  urgentDeadlineDays?: number;
 }
 
-export default function DashboardHeader({ 
-  firstName, 
-  nationality, 
-  currentDegree, 
-  fieldOfStudy 
-}: Props) {
-  const router = useRouter();
+export function DashboardHeader({ firstName, totalMatches = 0, newMatchesCount = 0, urgentDeadlineDays = 0 }: Props) {
+  const { openSearch } = useSearchOverlay();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 17) return "Good afternoon";
+    if (hour >= 17 && hour < 21) return "Good evening";
+    return "Late night";
   };
 
-  const greeting = getGreeting();
-  const displayName = firstName ? `, ${firstName}` : "";
+  const getSubLine = () => {
+    if (newMatchesCount > 0) return `${newMatchesCount} new scholarships match your profile.`;
+    if (urgentDeadlineDays > 0 && urgentDeadlineDays <= 14) return `One of your saved scholarships closes in ${urgentDeadlineDays} days.`;
+    return `You have ${totalMatches} scholarships waiting to be explored.`;
+  };
+
+  const greeting = mounted ? getGreeting() : "Welcome";
+  const displayName = firstName ? `, ${firstName}.` : ".";
+  
+  // Open search on Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        openSearch();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [openSearch]);
 
   return (
-    <header className="px-4 pt-4 pb-4 flex flex-col gap-4 bg-white">
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col">
-          <h1 className="text-lg font-medium text-gray-900 leading-tight">
-            {greeting}{displayName}
-          </h1>
-          <p className="text-gray-500 text-sm font-normal" id="discovery-subtext">
-            Find your scholarship
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            aria-label="Search scholarships"
-            className="w-11 h-11 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <i className="ti-search text-[20px]"></i>
-          </button>
-          <button
-            aria-label="Notifications"
-            className="w-11 h-11 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
-          >
-            <i className="ti-bell text-[20px]"></i>
-          </button>
-        </div>
+    <header className="px-6 md:px-8 pt-7 pb-4 flex items-start justify-between bg-bg sticky top-0 z-30">
+      <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
+        <h1 className="text-[28px] font-editorial font-light text-ink leading-tight tracking-tight">
+          {greeting}{displayName}
+        </h1>
+        <p className="text-ink-secondary text-[14px] font-ui mt-1">
+          {mounted ? getSubLine() : "Loading your matches..."}
+        </p>
       </div>
 
-      {/* Profile Summary Row */}
-      <div 
-        onClick={() => router.push("/profile")}
-        className="bg-gray-50 rounded-xl px-3 py-2.5 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform"
-      >
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {nationality && (
-            <div className="bg-white border border-gray-200 rounded-full px-2 py-0.5 text-[10px] font-medium text-gray-600 flex items-center gap-1">
-              <span className="text-xs">{nationality === 'NG' ? '🇳🇬' : nationality === 'KE' ? '🇰🇪' : '🌍'}</span>
-              {nationality}
-            </div>
+      <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
+        {/* Search icon (All screens) */}
+        <button
+          onClick={openSearch}
+          className="btn-icon"
+          aria-label="Search scholarships"
+        >
+          <MagnifyingGlass size={20} className="text-ink-secondary" />
+        </button>
+
+        <Link
+          href="/alerts"
+          aria-label="Notifications"
+          className="btn-icon relative"
+        >
+          <Bell size={20} className="text-ink-secondary" />
+          {urgentDeadlineDays > 0 && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-urgent rounded-full border border-surface shadow-sm" />
           )}
-          {currentDegree && (
-            <div className="bg-white border border-gray-200 rounded-full px-2 py-0.5 text-[10px] font-medium text-gray-600">
-              {currentDegree.charAt(0) + currentDegree.slice(1).toLowerCase()}
-            </div>
-          )}
-          {fieldOfStudy && (
-            <div className="bg-white border border-gray-200 rounded-full px-2 py-0.5 text-[10px] font-medium text-gray-600 max-w-[120px] truncate">
-              {fieldOfStudy}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-1 text-[#1D9E75] font-semibold text-[10px] shrink-0 ml-2">
-          <span>Edit</span>
-          <i className="ti-pencil"></i>
-        </div>
+        </Link>
       </div>
     </header>
   );

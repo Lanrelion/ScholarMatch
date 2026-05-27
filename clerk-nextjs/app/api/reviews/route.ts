@@ -1,103 +1,77 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { checkRateLimit } from "@/lib/checkRateLimit";
-import { discoveryLimiter, writeLimiter } from "@/lib/ratelimit";
+import { auth } from "@clerk/nextjs/server";
+import { db } from "../../../lib/db";
 
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
-  const limited = await checkRateLimit(discoveryLimiter, userId);
-  if (limited) return limited;
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   try {
-    // ReviewPrompt expects an array of unreviewed SavedScholarships
-    // with { id, scholarship: { ... } }
-    const unreviewed = await db.savedScholarship.findMany({
-      where: { 
-        userId,
-        scholarship: {
+    const pendingReviews = await db.savedScholarship.findMany({
+      where: {
+        userId: clerkId,
+        sourceVisited: true,
+        savedAt: { lte: sevenDaysAgo },
+        scholarship: { 
+          isActive: true,
           matchReviews: {
-            none: { userId }
+            none: { userId: clerkId }
           }
         }
       },
       include: { scholarship: true },
-      orderBy: { savedAt: "desc" },
+      take: 3
     });
 
-    return NextResponse.json(unreviewed);
-  } catch (err) {
-    console.error("Reviews GET error:", err);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return NextResponse.json(pendingReviews);
+  } catch (error: any) {
+    console.error("[Reviews API GET Error]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const limited = await checkRateLimit(writeLimiter, userId);
-    if (limited) return limited;
-
     const body = await req.json();
     const { scholarshipId, rating, mismatchReasons, note, applied } = body;
 
-    if (!scholarshipId) {
-      return NextResponse.json({ error: "missing_fields" }, { status: 400 });
+    if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return NextResponse.json({ error: "Invalid rating" }, { status: 400 });
     }
 
-    const user = await currentUser();
-    const email = user?.emailAddresses[0]?.emailAddress;
-    
-    if (email) {
-      await db.user.upsert({
-        where: { id: userId },
-        update: { email },
-        create: { id: userId, email }
-      });
-    }
-
-    // Look up the AI match score from the saved scholarship to satisfy the schema
-    const saved = await db.savedScholarship.findUnique({
-      where: { userId_scholarshipId: { userId, scholarshipId } }
+    const savedScholarship = await db.savedScholarship.findFirst({
+      where: { userId: clerkId, scholarshipId },
+      select: { matchScore: true }
     });
-    const matchScore = saved?.matchScore || 0.0;
 
-    const review = await db.matchReview.upsert({
-      where: {
-        userId_scholarshipId: {
-          userId,
-          scholarshipId
-        }
-      },
-      update: {
-        matchScore,
-        mismatchReasons: mismatchReasons ?? [],
-        rating: rating ?? null,
-        applied,
-        note: note ?? null
-      },
-      create: {
-        userId,
+    if (!savedScholarship) {
+      return NextResponse.json({ error: "Saved scholarship not found" }, { status: 404 });
+    }
+
+    const review = await db.matchReview.create({
+      data: {
+        userId: clerkId,
         scholarshipId,
-        matchScore,
+        rating,
+        matchScore: savedScholarship.matchScore ?? 0,
         mismatchReasons: mismatchReasons ?? [],
-        rating: rating ?? null,
-        applied,
-        note: note ?? null
+        note: note ?? null,
+        applied: applied ?? null,
       }
     });
 
-    return NextResponse.json(review, { status: 200 });
+    return NextResponse.json(review, { status: 201 });
   } catch (error: any) {
-    console.error("POST /api/reviews error:", error);
-    return NextResponse.json({ error: "internal_error", details: error.message }, { status: 500 });
+    console.error("[Reviews API POST Error]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

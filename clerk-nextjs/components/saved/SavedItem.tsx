@@ -2,20 +2,25 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Scholarship } from "@prisma/client";
+import { motion } from "framer-motion";
+import { Medal, ArrowRight, Trash } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
 
-interface Props {
-  item: {
-    id: string;
-    scholarship: Scholarship;
-    matchScore: number;
-  };
+interface SavedItemProps {
+  item: any; // { id: string, scholarship: ScholarshipWithMatch, changeAlerted: boolean }
   onUnsave: (id: string) => void;
 }
 
-export default function SavedItem({ item, onUnsave }: Props) {
+export default function SavedItem({ item, onUnsave }: SavedItemProps) {
   const router = useRouter();
   const { scholarship } = item;
+
+  const now = new Date();
+  const deadline = scholarship.deadline ? new Date(scholarship.deadline) : null;
+  const daysLeft = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+  const isUrgent = daysLeft !== null && daysLeft <= 7;
+  const isWarning = daysLeft !== null && daysLeft > 7 && daysLeft <= 30;
 
   const handleUnsave = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -23,69 +28,77 @@ export default function SavedItem({ item, onUnsave }: Props) {
       const res = await fetch(`/api/saved/${item.id}`, { method: "DELETE" });
       if (res.ok) {
         onUnsave(item.id);
-      } else {
-        alert("Could not remove. Try again.");
       }
     } catch (err) {
-      alert("Network error. Try again.");
+      console.error(err);
     }
   };
 
-  const getDeadlineInfo = () => {
-    if (!scholarship.deadline) return { label: "Open deadline", style: "text-gray-400" };
-    const date = new Date(scholarship.deadline);
-    const now = new Date();
-    const diffDays = Math.ceil((date.getTime() - now.getTime()) / 86400000);
-
-    if (diffDays <= 0) return { label: "Closed", style: "text-[#E24B4A] font-medium" };
-    if (diffDays <= 7) return { label: `${diffDays} days left`, style: "text-[#A32D2D] font-medium" };
-    if (diffDays <= 30) return { label: `${diffDays} days left`, style: "text-[#854F0B]" };
-    
-    return { 
-      label: date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }), 
-      style: "text-gray-400" 
-    };
+  const getDeadlineText = () => {
+    if (daysLeft === null) return "Open deadline";
+    if (daysLeft < 0) return "Closed";
+    return `${daysLeft} days left`;
   };
 
-  const deadline = getDeadlineInfo();
+  const getDeadlineColorClass = () => {
+    if (isUrgent) return "text-urgent font-medium";
+    if (isWarning) return "text-warning";
+    return "text-ink-tertiary";
+  };
 
   return (
-    <div 
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] as any }}
       onClick={() => router.push(`/scholarship/${scholarship.id}`)}
-      className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0 cursor-pointer active:bg-gray-50 transition-colors"
+      className="group flex flex-row items-center w-full bg-surface border border-border rounded-xl p-4 md:px-5 mb-2 cursor-pointer transition-all duration-180 ease-primary hover:border-border-strong hover:shadow-[0_4px_20px_rgba(22,21,20,0.06)]"
     >
-      {/* LEFT — icon square */}
-      <div className="w-10 h-10 rounded-xl bg-[#E1F5EE] flex-shrink-0 flex items-center justify-center">
-        <i className="ti-award text-[#0F6E56] text-lg"></i>
+      {/* LEFT — Icon square */}
+      <div 
+        className={cn(
+          "shrink-0 w-12 h-12 rounded-md flex items-center justify-center mr-4 transition-colors",
+          isUrgent ? "bg-urgent-surface" : "bg-moss-light",
+          isUrgent && "animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"
+        )}
+      >
+        <Medal size={22} weight="fill" className={isUrgent ? "text-urgent" : "text-moss"} />
       </div>
 
-      {/* MIDDLE — content */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-medium text-gray-900 truncate">
+      {/* MIDDLE — Content */}
+      <div className="flex-1 min-w-0 mr-4">
+        <h3 className="text-[14px] font-ui font-medium text-ink whitespace-nowrap overflow-hidden text-ellipsis">
           {scholarship.title}
         </h3>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className={`text-xs ${deadline.style}`}>{deadline.label}</span>
-          <span className="text-xs text-gray-300">·</span>
-          <span className="text-xs text-[#0F6E56]">
+        <div className="flex items-center gap-2 mt-1">
+          <span className={cn("text-[12px]", getDeadlineColorClass())}>
+            {getDeadlineText()}
+          </span>
+          <span className="text-[12px] text-border">·</span>
+          <span className="text-[12px] font-ui font-medium text-moss">
             {Math.round(item.matchScore * 100)}% match
           </span>
         </div>
       </div>
 
-      {/* RIGHT — actions */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={handleUnsave}
-          aria-label="Remove from saved"
-          className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-[#E24B4A] transition-colors"
+      {/* RIGHT — Actions */}
+      <div className="shrink-0 flex flex-col gap-1.5">
+        <button 
+          className="w-9 h-9 rounded-md bg-transparent hover:bg-surface-hover flex items-center justify-center text-ink-tertiary transition-colors"
+          aria-label="View Details"
         >
-          <i className="ti-trash text-base"></i>
+          <ArrowRight size={16} weight="bold" />
         </button>
-        <div className="text-gray-300">
-          <i className="ti-chevron-right text-base"></i>
-        </div>
+        <button 
+          onClick={handleUnsave}
+          className="w-9 h-9 rounded-md bg-transparent hover:bg-surface-hover flex items-center justify-center text-ink-tertiary hover:text-urgent transition-colors"
+          aria-label="Remove saved item"
+        >
+          <Trash size={16} weight="fill" />
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

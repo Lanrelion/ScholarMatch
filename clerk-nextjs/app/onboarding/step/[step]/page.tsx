@@ -3,13 +3,15 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
-import StepName from "@/components/onboarding/StepName";
-import StepNationality from "@/components/onboarding/StepNationality";
-import StepDegreeLevel from "@/components/onboarding/StepDegreeLevel";
-import StepFieldOfStudy from "@/components/onboarding/StepFieldOfStudy";
-import StepGPA from "@/components/onboarding/StepGPA";
-import StepExperience from "@/components/onboarding/StepExperience";
+import Screen1Name from "@/components/onboarding/screens/Screen1Name";
+import Screen2Nationality from "@/components/onboarding/screens/Screen2Nationality";
+import Screen3GPA from "@/components/onboarding/screens/Screen3GPA";
+import Screen4Destination from "@/components/onboarding/screens/Screen4Destination";
+import Screen5Field from "@/components/onboarding/screens/Screen5Field";
+import Screen6Experience from "@/components/onboarding/screens/Screen6Experience";
+import MatchReveal from "@/components/onboarding/MatchReveal";
 import { useOnboardingState } from "@/hooks/useOnboardingState";
+import { ScholarshipWithMatch } from "@/types/scholarship";
 
 export default function OnboardingStep({
   params,
@@ -20,7 +22,19 @@ export default function OnboardingStep({
   const router = useRouter();
   const stepNumber = parseInt(resolvedParams.step, 10);
   const [error, setError] = useState("");
-  const { state, updateField, isStepValid } = useOnboardingState();
+  const [showReveal, setShowReveal] = useState(false);
+  const [matchCount, setMatchCount] = useState(0);
+  const [topMatches, setTopMatches] = useState<ScholarshipWithMatch[]>([]);
+  const { state, updateField, isStepValid, loading } = useOnboardingState();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-bg">
+        <div className="w-8 h-8 rounded-full border-2 border-moss border-t-transparent animate-spin mb-4" />
+        <span className="text-[13px] font-ui text-ink-secondary">Loading your onboarding session...</span>
+      </div>
+    );
+  }
 
   if (isNaN(stepNumber) || stepNumber < 1 || stepNumber > 6) {
     if (typeof window !== "undefined") {
@@ -41,6 +55,7 @@ export default function OnboardingStep({
     if (stepNumber < 6) {
       router.push(`/onboarding/step/${stepNumber + 1}`);
     } else {
+      setShowReveal(true);
       try {
         const payload = {
           firstName: state.firstName.trim(),
@@ -48,12 +63,14 @@ export default function OnboardingStep({
           nationality: state.nationality,
           citizenships: [state.nationality],
           currentDegree: state.currentDegree,
-          fieldOfStudy: state.fieldOfStudy.trim(),
-          gpa: state.gpa ? parseFloat(state.gpa) : null,
+          fieldOfStudy: state.fields.join(", "),
+          gpa: state.gpa,
           gpaScale: state.gpaScale,
           needsFinancialAid: state.needsFinancialAid,
-          workExperienceYears: state.workExperienceYears === "3+" ? 3 : parseInt(state.workExperienceYears || "0", 10),
-          countryOfStudy: state.targetCountry === "ANY" ? null : state.targetCountry,
+          workExperienceYears: state.workExperienceYears,
+          countryOfStudy: state.destinations.length > 0 && !state.destinations.includes("ANY")
+            ? state.destinations[0]
+            : null,
         };
 
         const res = await fetch("/api/profile", {
@@ -63,20 +80,62 @@ export default function OnboardingStep({
         });
 
         if (res.ok) {
-          router.push("/dashboard");
+          const matchRes = await fetch("/api/scholarships?limit=4");
+          if (matchRes.ok) {
+            const result = await matchRes.json();
+            setMatchCount(result.meta?.total || 0);
+            setTopMatches(result.data || []);
+          }
         } else {
+          setShowReveal(false);
           const errorData = await res.json().catch(() => ({}));
           console.error("Onboarding submission failed:", res.status, errorData);
           setError(`Error: ${res.status} - ${errorData.error || "Please try again."}`);
         }
       } catch (err) {
+        setShowReveal(false);
         console.error("Onboarding submission error:", err);
         setError("Network error. Please check your connection.");
       }
     }
   };
 
-  const continueDisabled = !isStepValid(stepNumber);
+  const handleSkip = () => {
+    router.push(`/onboarding/step/${stepNumber + 1}`);
+  };
+
+  const continueDisabled = !isStepValid(stepNumber) || showReveal;
+
+  // Determine continue label based on step
+  const getContinueLabel = (): string | undefined => {
+    if (stepNumber === 4 && state.destinations.length > 0) {
+      return `Continue with ${state.destinations.length} ${state.destinations.length === 1 ? "destination" : "destinations"} →`;
+    }
+    if (stepNumber === 5 && state.fields.length > 0) {
+      return `Continue with ${state.fields.length} ${state.fields.length === 1 ? "field" : "fields"} →`;
+    }
+    if (stepNumber === 6) {
+      return "Find my matches →";
+    }
+    return undefined;
+  };
+
+  // Determine if skip is available
+  const showSkip = stepNumber === 3; // GPA is skippable
+
+  if (showReveal) {
+    return (
+      <MatchReveal
+        matchCount={matchCount}
+        topMatches={topMatches}
+        onComplete={() => router.push("/dashboard")}
+        userName={state.firstName}
+        nationalityName={state.nationalityName}
+        destinations={state.destinations}
+        fields={state.fields}
+      />
+    );
+  }
 
   return (
     <OnboardingShell
@@ -86,21 +145,22 @@ export default function OnboardingStep({
       onContinue={handleContinue}
       continueDisabled={continueDisabled}
       isLastStep={stepNumber === 6}
+      showSkip={showSkip}
+      onSkip={handleSkip}
+      continueLabel={getContinueLabel()}
     >
-      <div className="flex-1 py-8 px-6 overflow-y-auto">
-        {stepNumber === 1 && <StepName state={state} updateField={updateField} />}
-        {stepNumber === 2 && <StepNationality state={state} updateField={updateField} />}
-        {stepNumber === 3 && <StepDegreeLevel state={state} updateField={updateField} />}
-        {stepNumber === 4 && <StepFieldOfStudy state={state} updateField={updateField} />}
-        {stepNumber === 5 && <StepGPA state={state} updateField={updateField} />}
-        {stepNumber === 6 && <StepExperience state={state} updateField={updateField} />}
-        
-        {error && stepNumber === 6 && (
-          <div className="mt-4 text-center text-sm font-medium text-[#E24B4A]">
-            {error}
-          </div>
-        )}
-      </div>
+      {stepNumber === 1 && <Screen1Name state={state} updateField={updateField} />}
+      {stepNumber === 2 && <Screen2Nationality state={state} updateField={updateField} />}
+      {stepNumber === 3 && <Screen3GPA state={state} updateField={updateField} />}
+      {stepNumber === 4 && <Screen4Destination state={state} updateField={updateField} />}
+      {stepNumber === 5 && <Screen5Field state={state} updateField={updateField} />}
+      {stepNumber === 6 && <Screen6Experience state={state} updateField={updateField} />}
+
+      {error && stepNumber === 6 && (
+        <div className="mt-4 text-center text-sm font-ui font-medium text-urgent">
+          {error}
+        </div>
+      )}
     </OnboardingShell>
   );
 }

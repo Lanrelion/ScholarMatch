@@ -1,43 +1,34 @@
-"use client";
-
 import React from "react";
+import { cn } from "@/lib/utils";
 
-interface FilterOption {
+interface Option {
   id: string;
   label: string;
 }
 
 interface FilterPillsProps {
-  options: FilterOption[];
+  options: Option[];
   activeId: string;
   onChange: (id: string) => void;
 }
 
 export function FilterPills({ options, activeId, onChange }: FilterPillsProps) {
   return (
-    <div 
-      className="flex gap-2 px-4 pb-2 overflow-x-auto snap-x"
-      style={{
-        scrollbarWidth: "none",
-        maskImage: "linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%)"
-      }}
-    >
-      {options.map((option) => {
-        const isActive = activeId === option.id;
+    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2 px-4 md:px-6">
+      {options.map((opt) => {
+        const isActive = activeId === opt.id;
         return (
           <button
-            key={option.id}
-            onClick={() => onChange(option.id)}
-            className={`
-              snap-start whitespace-nowrap min-h-[34px] px-[14px] py-[6px] rounded-full text-[13px] transition-all duration-150 border
-              ${isActive 
-                ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white font-medium" 
-                : "bg-white border-[var(--color-border)] text-gray-700 hover:border-gray-300"
-              }
-            `}
+            key={opt.id}
+            onClick={() => onChange(opt.id)}
+            className={cn(
+              "whitespace-nowrap px-4 py-2 rounded-pill font-ui text-sm transition-all duration-200 border",
+              isActive 
+                ? "bg-moss text-white border-moss shadow-sm" 
+                : "bg-surface text-ink border-border hover:border-border-strong hover:bg-surface-hover"
+            )}
           >
-            {option.label}
+            {opt.label}
           </button>
         );
       })}

@@ -4,7 +4,6 @@
 node_modules/
 .pnp
 .pnp.js
-.yarn/install-state.gz
 
 # testing
 coverage/
@@ -14,8 +13,7 @@ coverage/
 out/
 
 # production
-build/
-dist/
+/build
 
 # misc
 .DS_Store
@@ -27,17 +25,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env*.local
 .env
-.env.local
 .env.development.local
 .env.test.local
 .env.production.local
-*.env.local
-
-# logs and temp files
-*.txt
-*.bak
-scholarmatch-temp/
 
 # vercel
 .vercel
@@ -46,8 +38,9 @@ scholarmatch-temp/
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-/prisma/migrations/
-/prisma/*.db
-/prisma/*.db-journal
-/lib/generated/prisma
+# scratch files
+scratch/
+output.html
+dev_output.txt
+build_error*.txt
+move.ps1

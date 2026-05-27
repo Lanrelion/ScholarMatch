@@ -1,106 +1,137 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react";
+import { BellRinging, BellSlash, Bell, X } from "@phosphor-icons/react";
+import { cn } from "@/lib/utils";
 
-export default function PushPermission() {
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default")
-  const [isRegistering, setIsRegistering] = useState(false)
+type PushState = "prompt" | "dismissed" | "granted" | "denied";
+
+export function PushPermission() {
+  const [pushState, setPushState] = useState<PushState>("prompt");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-      setPermission("unsupported")
-      return
+    setMounted(true);
+    // Check actual browser permission
+    const browserPerm = typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default";
+    
+    // Check our local intent preference
+    const savedState = localStorage.getItem("scholarmatch_push_state") as PushState | null;
+
+    if (browserPerm === "denied") {
+      setPushState("denied");
+    } else if (browserPerm === "granted" && savedState !== "dismissed") {
+      setPushState("granted");
+    } else if (savedState) {
+      setPushState(savedState);
     }
-    setPermission(Notification.permission)
-  }, [])
+  }, []);
 
   const handleEnable = async () => {
-    setIsRegistering(true)
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notifications.");
+      return;
+    }
 
     try {
-      // 1. Request permission
-      const result = await Notification.requestPermission()
-      if (result !== "granted") {
-        setPermission(result)
-        setIsRegistering(false)
-        return
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setPushState("granted");
+        localStorage.setItem("scholarmatch_push_state", "granted");
+      } else if (permission === "denied") {
+        setPushState("denied");
+        localStorage.setItem("scholarmatch_push_state", "denied");
+      } else {
+        // "default" means they dismissed the prompt without deciding
+        setPushState("dismissed");
+        localStorage.setItem("scholarmatch_push_state", "dismissed");
       }
-
-      // 2. Get service worker registration
-      const registration = await navigator.serviceWorker.ready
-
-      // 3. Subscribe to push
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        )
-      })
-
-      // 4. Send subscription to server
-      const sub = subscription.toJSON()
-      await fetch("/api/notify/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: sub.endpoint,
-          keys: sub.keys
-        })
-      })
-
-      setPermission("granted")
-    } catch (error) {
-      console.error("Push registration failed:", error)
-    } finally {
-      setIsRegistering(false)
+    } catch (e) {
+      console.error(e);
     }
+  };
+
+  const handleDismiss = () => {
+    setPushState("dismissed");
+    localStorage.setItem("scholarmatch_push_state", "dismissed");
+  };
+
+  const handleStop = () => {
+    setPushState("dismissed");
+    localStorage.setItem("scholarmatch_push_state", "dismissed");
+  };
+
+  const handleReenableAttempt = () => {
+    // If they previously blocked it at the browser level, requestPermission will auto-fail.
+    // We should alert them.
+    if (Notification.permission === "denied") {
+      alert("You have blocked notifications in your browser settings. Please click the lock icon in your URL bar to allow them.");
+      return;
+    }
+    setPushState("prompt");
+  };
+
+  if (!mounted) return null;
+
+  if (pushState === "dismissed" || pushState === "denied") {
+    return (
+      <div className="mb-8 flex justify-end">
+        <button 
+          onClick={handleReenableAttempt}
+          className="flex items-center gap-2 bg-surface hover:bg-surface-hover border border-border px-3 py-1.5 rounded-full transition-colors text-ink-secondary"
+          title="Enable Deadline Notifications"
+        >
+          <BellRinging size={16} />
+          <span className="font-ui text-[12px] font-medium">Turn on alerts</span>
+        </button>
+      </div>
+    );
   }
 
-  if (permission === "unsupported" || permission === "granted" || permission === "denied") {
-    return null
+  if (pushState === "granted") {
+    return (
+      <div className="mb-8 flex justify-end">
+        <button 
+          onClick={handleStop}
+          className="flex items-center gap-2 bg-moss-light border border-moss px-3 py-1.5 rounded-full transition-colors text-moss hover:bg-moss/20"
+          title="Stop Notifications"
+        >
+          <Bell size={16} weight="fill" />
+          <span className="font-ui text-[12px] font-medium">Notifications Active (Click to stop)</span>
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-[#E1F5EE] rounded-2xl p-4 mx-4 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-[#1D9E75] flex items-center justify-center flex-shrink-0">
-          <i className="ti-bell text-white text-sm"></i>
-        </div>
-        <h3 className="text-sm font-semibold text-[#0F6E56]">
-          Get deadline reminders
-        </h3>
-      </div>
-      
-      <p className="text-xs text-[#0F6E56] mt-2 mb-4 leading-relaxed">
-        We'll notify you 30, 7, and 1 day before each scholarship deadline so you never miss an opportunity.
-      </p>
+    <div className="bg-moss-light border border-moss rounded-xl p-5 md:px-6 relative mb-8">
+      <button 
+        onClick={handleDismiss}
+        className="absolute top-4 right-4 text-moss hover:text-moss-dark transition-colors"
+        aria-label="Dismiss"
+      >
+        <X size={16} weight="bold" />
+      </button>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleEnable}
-          disabled={isRegistering}
-          className="bg-[#1D9E75] text-white text-xs font-semibold rounded-xl px-5 py-2.5 hover:bg-[#188a66] transition-colors disabled:opacity-50"
-        >
-          {isRegistering ? "Enabling..." : "Enable notifications"}
-        </button>
-        <button
-          onClick={() => setPermission("denied")}
-          className="text-xs text-[#0F6E56] font-medium px-2 py-1 hover:underline"
-        >
-          Not now
-        </button>
+      <div className="flex items-start gap-4">
+        <div className="shrink-0 w-10 h-10 rounded-full bg-moss/10 flex items-center justify-center text-moss">
+          <BellRinging size={20} weight="fill" />
+        </div>
+        <div>
+          <h3 className="text-[15px] font-editorial font-medium text-ink mb-1">
+            Never miss a deadline
+          </h3>
+          <p className="text-[13px] font-ui text-ink-secondary leading-[1.5] max-w-sm mb-4">
+            Enable push notifications to get reminded when your saved scholarships are closing soon.
+          </p>
+          <button 
+            onClick={handleEnable}
+            className="h-9 px-5 bg-moss text-white rounded-full font-ui font-medium text-[13px] hover:bg-moss-dark transition-colors"
+          >
+            Enable notifications
+          </button>
+        </div>
       </div>
     </div>
-  )
-}
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i)
-  }
-  return outputArray
+  );
 }

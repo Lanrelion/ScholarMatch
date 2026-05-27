@@ -2,8 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { scoreScholarship } from "@/lib/matching/scoreScholarship";
-import { checkRateLimit } from "@/lib/checkRateLimit";
-import { discoveryLimiter } from "@/lib/ratelimit";
+import { DegreeLevel } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -12,10 +11,6 @@ export async function GET(req: Request) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const limited = await checkRateLimit(discoveryLimiter, userId);
-    if (limited) return limited;
-
 
     const profile = await db.profile.findUnique({
       where: { userId },
@@ -58,17 +53,18 @@ export async function GET(req: Request) {
       ]
     };
 
-    const total = await db.scholarship.count({ where: whereClause });
-    
-    // Using prisma sort to order by deadline
-    const scholarships = await db.scholarship.findMany({
-      where: whereClause,
-      skip,
-      take: limit,
-      orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
-    });
+    // Parallelize count and findMany
+    const [total, scholarships] = await Promise.all([
+      db.scholarship.count({ where: whereClause }),
+      db.scholarship.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
+      })
+    ]);
 
-    const results = scholarships.map((scholarship: any) => {
+    const results = scholarships.map((scholarship) => {
       const { matchScore, matchBreakdown } = scoreScholarship(scholarship, profile as any);
 
       return {
@@ -79,7 +75,7 @@ export async function GET(req: Request) {
     });
 
     // Sort final array by matchScore DESC
-    results.sort((a, b) => b.matchScore - a.matchScore);
+    results.sort((a: any, b: any) => b.matchScore - a.matchScore);
 
     return NextResponse.json({
       data: results,

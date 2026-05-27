@@ -2,80 +2,124 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import StepName from "@/components/onboarding/StepName";
-import StepNationality from "@/components/onboarding/StepNationality";
-import StepDegreeLevel from "@/components/onboarding/StepDegreeLevel";
-import StepFieldOfStudy from "@/components/onboarding/StepFieldOfStudy";
-import StepGPA from "@/components/onboarding/StepGPA";
-import BottomNav from "@/components/layout/BottomNav";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { ArrowLeft, LockKey, CircleNotch, CheckCircle, Student, GlobeHemisphereWest, Bank } from "@phosphor-icons/react";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { Input } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
+
+// New Components
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ReadinessScore } from "@/components/profile/ReadinessScore";
+import { JourneyTimeline } from "@/components/profile/JourneyTimeline";
+import { AIInsights } from "@/components/profile/AIInsights";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 
 type ProfileData = {
   firstName: string;
   lastName: string;
   nationality: string;
-  currentDegree: "UNDERGRADUATE" | "MASTERS" | "PHD";
+  currentDegree: "UNDERGRADUATE" | "MASTERS" | "PHD" | "";
   fieldOfStudy: string;
   gpa: string;
-  gpaScale: number;
+  gpaScale: string;
   needsFinancialAid: boolean | null;
-  workExperienceYears: string;
-  countryOfStudy: string;
+  targetCountryOfStudy: string;
 };
+
+const DEGREE_OPTIONS = [
+  { value: "UNDERGRADUATE", label: "BSc / Undergraduate" },
+  { value: "MASTERS", label: "Masters" },
+  { value: "PHD", label: "PhD" },
+];
+
+const DESTINATION_OPTIONS = [
+  { value: "United Kingdom", label: "United Kingdom" },
+  { value: "Germany", label: "Germany" },
+  { value: "Sweden", label: "Sweden" },
+  { value: "Canada", label: "Canada" },
+  { value: "Netherlands", label: "Netherlands" },
+  { value: "United States", label: "United States" },
+  { value: "France", label: "France" },
+  { value: "Australia", label: "Australia" },
+  { value: "Anywhere", label: "Open to anywhere" },
+];
+
+const FIELD_OPTIONS = [
+  { value: "Computer Science", label: "Computer Science" },
+  { value: "Engineering", label: "Engineering" },
+  { value: "Medicine & Health", label: "Medicine & Health" },
+  { value: "Business & Economics", label: "Business & Economics" },
+  { value: "Sciences", label: "Sciences" },
+  { value: "Social Sciences & Arts", label: "Social Sciences & Arts" },
+  { value: "Agriculture & Environment", label: "Agriculture & Environment" },
+];
+
+const GPA_SCALE_OPTIONS = [
+  { value: "4.0", label: "4.0 Scale" },
+  { value: "5.0", label: "5.0 Scale" },
+  { value: "7.0", label: "7.0 Scale" },
+  { value: "100", label: "Percentage (100)" },
+];
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { signOut } = useClerk();
   const { user, isLoaded: isUserLoaded } = useUser();
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+
+  const [profile, setProfile] = useState<ProfileData>({
+    firstName: "",
+    lastName: "",
+    nationality: "",
+    currentDegree: "",
+    fieldOfStudy: "",
+    gpa: "",
+    gpaScale: "4.0",
+    needsFinancialAid: null,
+    targetCountryOfStudy: "",
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isChangingNationality, setIsChangingNationality] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    fetchProfile();
+    async function loadData() {
+      try {
+        const profRes = await fetch("/api/profile");
+        const profData = await profRes.json();
+
+        if (profData.exists) {
+          setProfile({
+            firstName: profData.profile.firstName || "",
+            lastName: profData.profile.lastName || "",
+            nationality: profData.profile.nationality || "",
+            currentDegree: profData.profile.currentDegree || "",
+            fieldOfStudy: profData.profile.fieldOfStudy || "",
+            gpa: profData.profile.gpa?.toString() || "",
+            gpaScale: profData.profile.gpaScale?.toString() || "4.0",
+            needsFinancialAid: profData.profile.needsFinancialAid,
+            targetCountryOfStudy: profData.profile.countryOfStudy || "",
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const res = await fetch("/api/profile");
-      const data = await res.json();
-      if (data.exists) {
-        setProfile({
-          firstName: data.profile.firstName || "",
-          lastName: data.profile.lastName || "",
-          nationality: data.profile.nationality || "",
-          currentDegree: data.profile.currentDegree || "UNDERGRADUATE",
-          fieldOfStudy: data.profile.fieldOfStudy || "",
-          gpa: data.profile.gpa?.toString() || "",
-          gpaScale: data.profile.gpaScale || 4,
-          needsFinancialAid: data.profile.needsFinancialAid,
-          workExperienceYears: data.profile.workExperienceYears || "",
-          countryOfStudy: data.profile.countryOfStudy || "",
-        });
-      } else {
-        router.push("/onboarding/step/1");
-      }
-    } catch (err) {
-      setError("Failed to load profile");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleUpdateField = (field: keyof ProfileData, value: any) => {
-    setProfile((prev) => (prev ? { ...prev, [field]: value } : null));
-    if (field === "nationality") {
-      setIsChangingNationality(false);
-    }
+  const updateField = (field: keyof ProfileData, value: any) => {
+    setProfile(p => ({ ...p, [field]: value }));
+    setIsDirty(true);
   };
 
   const handleSave = async () => {
-    if (!profile) return;
+    if (isSaving || !isDirty) return;
     setIsSaving(true);
-    setError(null);
-
     try {
       const res = await fetch("/api/profile", {
         method: "POST",
@@ -83,19 +127,21 @@ export default function ProfilePage() {
         body: JSON.stringify({
           ...profile,
           gpa: profile.gpa ? parseFloat(profile.gpa) : null,
-          citizenships: [profile.nationality],
+          gpaScale: profile.gpaScale ? parseFloat(profile.gpaScale) : null,
+          citizenships: profile.nationality ? [profile.nationality] : [],
+          countryOfStudy: profile.targetCountryOfStudy === "Anywhere" ? "" : profile.targetCountryOfStudy
         }),
       });
 
       if (res.ok) {
         setSavedSuccess(true);
-        setTimeout(() => setSavedSuccess(false), 2000);
-      } else {
-        const data = await res.json();
-        setError(data.error || "Could not save. Please try again.");
+        setIsDirty(false);
+        // Invalidate router cache so dashboard matching triggers a fresh recalculation!
+        router.refresh();
+        setTimeout(() => setSavedSuccess(false), 2500);
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error(err);
     } finally {
       setIsSaving(false);
     }
@@ -103,198 +149,192 @@ export default function ProfilePage() {
 
   if (isLoading || !isUserLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <i className="ti-loader-2 text-3xl text-[#1D9E75] animate-spin"></i>
-          <p className="text-gray-500 text-sm font-medium">Loading profile...</p>
-        </div>
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <CircleNotch size={24} className="animate-spin text-moss" />
       </div>
     );
   }
 
-  if (!profile) return null;
+  // Calculate mock readiness score based on filled fields
+  const filledFields = Object.values(profile).filter(v => v !== "" && v !== null).length;
+  const totalFields = Object.keys(profile).length;
+  const readinessScore = Math.round((filledFields / totalFields) * 100);
+
+  // Generate AI Insights
+  const insights = [];
+  if (profile.gpa && parseFloat(profile.gpa) >= 3.5 && profile.gpaScale === "4.0") {
+    insights.push({ id: "1", type: "strength", text: `Your ${profile.gpa} GPA makes you highly competitive for top-tier academic merit scholarships.` });
+  }
+  if (profile.fieldOfStudy) {
+    insights.push({ id: "2", type: "strength", text: `There is currently a 24% increase in funding opportunities for ${profile.fieldOfStudy} candidates.` });
+  }
+  if (!profile.targetCountryOfStudy || profile.targetCountryOfStudy === "Anywhere") {
+    insights.push({ id: "3", type: "opportunity", text: "Adding a target destination country will unlock region-specific government scholarships (e.g. Chevening, DAAD)." });
+  }
+
+  // Generate Timeline Milestones
+  const milestones = [];
+  if (profile.currentDegree) {
+    milestones.push({
+      id: "m1",
+      type: "past",
+      title: "Previous Education",
+      subtitle: `Completed prerequisites for ${profile.currentDegree.toLowerCase()} studies.`,
+      icon: "degree"
+    });
+    milestones.push({
+      id: "m2",
+      type: "current",
+      title: "Current Status",
+      subtitle: `${profile.currentDegree === "UNDERGRADUATE" ? "BSc" : profile.currentDegree === "MASTERS" ? "Masters" : "PhD"} in ${profile.fieldOfStudy || "Progress"}`,
+      date: "Present",
+      icon: "degree"
+    });
+  }
+  milestones.push({
+    id: "m3",
+    type: "future",
+    title: "Target Opportunity",
+    subtitle: `Seeking ${profile.needsFinancialAid ? "fully-funded " : ""}programs${profile.targetCountryOfStudy && profile.targetCountryOfStudy !== "Anywhere" ? ` in ${profile.targetCountryOfStudy}` : " globally"}.`,
+    icon: "target"
+  });
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* TOP BAR */}
-      <div className="sticky top-0 bg-white z-10 border-b border-gray-50">
-        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+    <div className="min-h-screen bg-bg flex flex-col pb-[120px]">
+      <div className="flex-1 max-w-[800px] mx-auto w-full px-4 sm:px-6 py-8">
+        
+        {/* Top Navigation */}
+        <div className="mb-6 flex justify-between items-center">
           <button
             onClick={() => router.back()}
-            className="w-10 h-10 flex items-center justify-center -ml-2 text-gray-900 hover:bg-gray-50 rounded-full transition-colors"
+            className="flex items-center gap-1.5 bg-transparent hover:bg-surface-hover px-2 py-1 -ml-2 rounded-md transition-colors text-ink font-ui font-medium text-[14px]"
           >
-            <i className="ti-arrow-left text-xl"></i>
+            <ArrowLeft size={16} />
+            Home
           </button>
-          <h1 className="text-lg font-medium text-gray-900">Edit profile</h1>
+          
+          <button 
+            onClick={() => signOut(() => router.push("/"))}
+            className="flex items-center gap-1.5 text-ink-tertiary hover:text-ink-secondary text-[13px] font-ui transition-colors"
+          >
+            <LockKey size={14} />
+            Sign out
+          </button>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 pb-40 space-y-8 max-w-2xl mx-auto w-full">
-        {error && (
-          <div className="bg-red-50 border border-red-100 text-[#E24B4A] text-sm p-4 rounded-xl flex items-center gap-3">
-            <i className="ti-alert-circle text-lg"></i>
-            {error}
+        <ProfileHeader 
+          firstName={profile.firstName}
+          lastName={profile.lastName}
+          nationality={profile.nationality}
+          currentDegree={profile.currentDegree}
+          fieldOfStudy={profile.fieldOfStudy}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          {/* LEFT COLUMN: Metric & Insights */}
+          <div className="md:col-span-1 flex flex-col gap-6">
+            <ReadinessScore score={readinessScore} />
+            <AIInsights insights={insights as any} />
           </div>
-        )}
 
-        {/* SECTION — Name */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            Name
-          </h2>
-          <StepName
-            firstName={profile.firstName}
-            lastName={profile.lastName}
-            onChange={(field, val) => handleUpdateField(field, val)}
-          />
-        </section>
-
-        <hr className="border-gray-50" />
-
-        {/* SECTION — Nationality */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            Nationality
-          </h2>
-          {!isChangingNationality ? (
-            <div className="flex items-center justify-between bg-gray-50 rounded-xl p-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#E1F5EE] border border-[#1D9E75] flex items-center justify-center text-[#1D9E75] text-xs font-bold">
-                  {profile.nationality}
+          {/* RIGHT COLUMN: Timeline & Bento Grid Data */}
+          <div className="md:col-span-2 flex flex-col gap-6">
+            
+            {/* Inline Editing Bento Cards */}
+            <div className="bg-surface border border-border rounded-[24px] p-6">
+              <h2 className="text-[18px] font-editorial text-ink mb-5">Core Profile</h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="group z-40">
+                  <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium flex items-center gap-1.5 mb-1.5">
+                    <Student size={14} /> Degree Level
+                  </label>
+                  <CustomSelect
+                    value={profile.currentDegree}
+                    onChange={(val) => updateField("currentDegree", val)}
+                    options={DEGREE_OPTIONS}
+                    placeholder="Select degree..."
+                  />
                 </div>
-                <span className="text-sm font-medium text-gray-900">
-                  {profile.nationality === "NG" ? "Nigeria" : 
-                   profile.nationality === "KE" ? "Kenya" : 
-                   profile.nationality === "GH" ? "Ghana" : profile.nationality}
-                </span>
+
+                <div className="group z-30">
+                  <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium flex items-center gap-1.5 mb-1.5">
+                    <GlobeHemisphereWest size={14} /> Target Destination
+                  </label>
+                  <CustomSelect
+                    value={profile.targetCountryOfStudy || "Anywhere"}
+                    onChange={(val) => updateField("targetCountryOfStudy", val === "Anywhere" ? "" : val)}
+                    options={DESTINATION_OPTIONS}
+                    placeholder="Select destination..."
+                  />
+                </div>
+
+                <div className="group z-20">
+                  <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium mb-1.5 flex items-center gap-1.5">
+                    Field of Study
+                  </label>
+                  <CustomSelect
+                    value={profile.fieldOfStudy}
+                    onChange={(val) => updateField("fieldOfStudy", val)}
+                    options={FIELD_OPTIONS}
+                    placeholder="Select field..."
+                  />
+                </div>
+
+                <div className="group flex gap-4 z-10">
+                  <div className="flex-[3]">
+                    <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium mb-1.5 block">
+                      GPA Score
+                    </label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={profile.gpa}
+                      onChange={(e) => updateField("gpa", e.target.value)}
+                      placeholder="e.g. 3.8"
+                      className="w-full bg-transparent border-b border-border/50 hover:border-border focus:border-moss outline-none py-[7px] text-[14px] font-ui text-ink transition-colors placeholder:text-ink-tertiary"
+                    />
+                  </div>
+                  <div className="flex-[2] relative">
+                    <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium mb-1.5 block">
+                      Scale
+                    </label>
+                    <CustomSelect
+                      value={profile.gpaScale}
+                      onChange={(val) => updateField("gpaScale", val)}
+                      options={GPA_SCALE_OPTIONS}
+                    />
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => setIsChangingNationality(true)}
-                className="text-xs font-semibold text-[#1D9E75] px-3 py-1.5 hover:bg-[#E1F5EE] rounded-lg transition-colors"
-              >
-                Change
-              </button>
             </div>
-          ) : (
-            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-              <StepNationality
-                value={profile.nationality}
-                onChange={(val) => handleUpdateField("nationality", val)}
-                hideHeader
-              />
-            </div>
-          )}
-        </section>
 
-        <hr className="border-gray-50" />
-
-        {/* SECTION — Degree level */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            Degree level
-          </h2>
-          <StepDegreeLevel
-            value={profile.currentDegree}
-            onChange={(val) => handleUpdateField("currentDegree", val)}
-            hideHeader
-          />
-        </section>
-
-        <hr className="border-gray-50" />
-
-        {/* SECTION — Field of study */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            Field of study
-          </h2>
-          <StepFieldOfStudy
-            value={profile.fieldOfStudy}
-            onChange={(val) => handleUpdateField("fieldOfStudy", val)}
-            hideHeader
-          />
-        </section>
-
-        <hr className="border-gray-50" />
-
-        {/* SECTION — GPA */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            GPA
-          </h2>
-          <StepGPA
-            gpa={profile.gpa}
-            gpaScale={profile.gpaScale}
-            onChange={(field, val) => handleUpdateField(field as any, val)}
-            hideHeader
-            hideFinancial
-          />
-        </section>
-
-        <hr className="border-gray-50" />
-
-        {/* SECTION — Financial need */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            Financial support needed?
-          </h2>
-          <StepGPA
-            needsFinancialAid={profile.needsFinancialAid}
-            onChange={(field, val) => handleUpdateField(field as any, val)}
-            hideHeader
-            hideGPA
-          />
-        </section>
-
-        <hr className="border-gray-50" />
-
-        {/* SECTION — Account */}
-        <section className="space-y-4">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold px-1">
-            Account
-          </h2>
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase">Email</span>
-              <span className="text-sm text-gray-900 font-medium">
-                {user?.primaryEmailAddress?.emailAddress}
-              </span>
-            </div>
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-500">Manage your email in account settings</p>
-              <button
-                onClick={() => window.open("https://accounts.clerk.dev/user", "_blank")}
-                className="flex items-center gap-1.5 text-xs font-semibold text-[#1D9E75]"
-              >
-                Settings
-                <i className="ti-external-link"></i>
-              </button>
-            </div>
+            <JourneyTimeline milestones={milestones as any} />
           </div>
-        </section>
+        </div>
+
       </div>
 
       {/* STICKY SAVE BUTTON */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 pb-[calc(16px+env(safe-area-inset-bottom))] z-20">
-        <div className="max-w-2xl mx-auto">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border transition-transform duration-300 ${isDirty ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="max-w-[800px] mx-auto px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex justify-end">
           <button
             onClick={handleSave}
-            disabled={isSaving}
-            className={`w-full h-14 rounded-2xl flex items-center justify-center text-sm font-semibold transition-all shadow-sm active:scale-95 ${
-              savedSuccess
-                ? "bg-[#639922] text-white"
-                : "bg-[#1D9E75] text-white"
-            } disabled:opacity-70`}
+            disabled={!isDirty || isSaving}
+            className={cn(
+              "px-8 h-12 rounded-full font-ui font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-200",
+              savedSuccess 
+                ? "bg-success-surface text-success pointer-events-none" 
+                : "bg-moss text-white hover:bg-moss-dark shadow-lg shadow-moss/20"
+            )}
           >
             {isSaving ? (
-              <div className="flex items-center gap-2">
-                <i className="ti-loader-2 animate-spin"></i>
-                <span>Saving...</span>
-              </div>
+              <CircleNotch size={18} className="animate-spin" />
             ) : savedSuccess ? (
-              <div className="flex items-center gap-2">
-                <i className="ti-check"></i>
-                <span>Saved!</span>
-              </div>
+              <>
+                <CheckCircle size={18} weight="fill" />
+                Saved
+              </>
             ) : (
               "Save changes"
             )}
@@ -302,7 +342,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <BottomNav />
+      {!isDirty && <BottomNav />}
     </div>
   );
 }

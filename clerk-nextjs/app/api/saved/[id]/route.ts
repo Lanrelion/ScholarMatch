@@ -1,8 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkRateLimit } from "@/lib/checkRateLimit";
-import { writeLimiter } from "@/lib/ratelimit";
 
 export async function DELETE(
   req: Request,
@@ -12,9 +10,6 @@ export async function DELETE(
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const limited = await checkRateLimit(writeLimiter, userId);
-  if (limited) return limited;
 
   const { id } = await params;
 
@@ -46,9 +41,6 @@ export async function PATCH(
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const limited = await checkRateLimit(writeLimiter, userId);
-  if (limited) return limited;
 
   const { id } = await params;
   const body = await req.json();

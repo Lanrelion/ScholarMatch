@@ -1,17 +1,12 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkRateLimit } from "@/lib/checkRateLimit";
-import { discoveryLimiter, writeLimiter } from "@/lib/ratelimit";
 
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const limited = await checkRateLimit(discoveryLimiter, userId);
-  if (limited) return limited;
 
   try {
     const saved = await db.savedScholarship.findMany({
@@ -37,9 +32,6 @@ export async function POST(req: Request) {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const limited = await checkRateLimit(writeLimiter, userId);
-    if (limited) return limited;
 
     const body = await req.json();
     console.log("POST /api/saved — body:", body);
@@ -100,6 +92,35 @@ export async function POST(req: Request) {
     if (error.code === "P2002") {
       return NextResponse.json({ error: "already_saved" }, { status: 409 });
     }
+    return NextResponse.json({ error: "internal_error", details: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { scholarshipId } = body;
+
+    if (!scholarshipId) {
+      return NextResponse.json({ error: "scholarshipId required" }, { status: 400 });
+    }
+
+    // Try deleting the specific save
+    await db.savedScholarship.deleteMany({
+      where: {
+        userId,
+        scholarshipId
+      }
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: any) {
+    console.error("DELETE /api/saved — FULL ERROR:", error);
     return NextResponse.json({ error: "internal_error", details: error.message }, { status: 500 });
   }
 }

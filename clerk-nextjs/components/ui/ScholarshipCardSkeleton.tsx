@@ -1,33 +1,30 @@
+import React from "react";
+
 export function ScholarshipCardSkeleton() {
   return (
-    <div className="bg-white border border-[var(--color-border)] rounded-[var(--radius-md)] p-4 mb-3 shadow-[var(--shadow-card)]">
-      {/* Title lines */}
-      <div className="w-3/4 h-4 mb-2 rounded-sm bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      <div className="w-1/2 h-3 mb-4 rounded-sm bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      
-      {/* Pills */}
-      <div className="flex gap-2 mb-4">
-        <div className="w-20 h-5 rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-        <div className="w-16 h-5 rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-        <div className="w-14 h-5 rounded-full bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
+    <div className="scholarship-card flex flex-col h-full animate-pulse border border-border bg-surface rounded-xl overflow-hidden min-h-[400px]">
+      <div className="card-image bg-surface-hover h-[180px]" />
+      <div className="card-body p-6 flex flex-col flex-1">
+        <div className="h-5 bg-border rounded w-3/4 mb-3" />
+        <div className="h-4 bg-border rounded w-1/2 mb-6" />
+        
+        <div className="flex gap-2 mb-6">
+          <div className="h-5 bg-border rounded w-16" />
+          <div className="h-5 bg-border rounded w-20" />
+        </div>
+        
+        <div className="w-full h-1.5 bg-border rounded-full mb-6" />
+        
+        <div className="flex gap-2 flex-wrap mb-6">
+          <div className="h-6 w-20 bg-border rounded-full" />
+          <div className="h-6 w-24 bg-border rounded-full" />
+        </div>
+        
+        <div className="mt-auto pt-4 border-t border-border flex justify-between">
+          <div className="h-6 w-24 bg-border rounded-full" />
+          <div className="h-4 w-12 bg-border rounded" />
+        </div>
       </div>
-      
-      {/* Match bar */}
-      <div className="w-full h-1 mb-3 rounded-sm bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      
-      {/* Eligibility lines */}
-      <div className="w-2/3 h-3 mb-2 rounded-sm bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      <div className="w-3/4 h-3 mb-2 rounded-sm bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      
-      {/* CTA */}
-      <div className="w-full h-10 mt-3 rounded-xl bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.5s_ease-in-out_infinite]" />
-      
-      <style>{`
-        @keyframes shimmer {
-          0%   { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
     </div>
   );
 }
