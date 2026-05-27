@@ -17,6 +17,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/adapter-pg": "^7.x",
     "@prisma/client": "^7.x",
+    "@serwist/next": "^9.5.11",
     "bullmq": "^5.76.8",
     "class-variance-authority": "^0.x",
     "clsx": "^2.x",
@@ -28,6 +29,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^4.x",
+    "serwist": "^9.5.11",
     "svix": "^1.x",
     "tailwind-merge": "^3.x",
     "zustand": "^5.0.13"
