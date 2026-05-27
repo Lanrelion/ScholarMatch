@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { WarningCircle, ArrowLeft } from "@phosphor-icons/react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import ReviewPrompt from "@/components/reviews/ReviewPrompt";
-import { PushPermission } from "@/components/pwa/PushPermission";
+import PushPermission from "@/components/pwa/PushPermission";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { CollectionBoard } from "@/components/saved/CollectionBoard";
 import { cn } from "@/lib/utils";
