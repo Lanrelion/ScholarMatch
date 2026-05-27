@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WarningCircle, ArrowLeft } from "@phosphor-icons/react";
-import SavedItem from "@/components/saved/SavedItem";
 import { BottomNav } from "@/components/layout/BottomNav";
 import ReviewPrompt from "@/components/reviews/ReviewPrompt";
 import { PushPermission } from "@/components/pwa/PushPermission";
 import { ErrorState } from "@/components/ui/ErrorState";
-
+import { CollectionBoard } from "@/components/saved/CollectionBoard";
+import { cn } from "@/lib/utils";
 
 export default function SavedPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function SavedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingReviews, setPendingReviews] = useState<any[]>([]);
+  const [activeFilter, setActiveFilter] = useState("all");
   
   const fetchData = async () => {
     setIsLoading(true);
@@ -48,21 +49,18 @@ export default function SavedPage() {
     fetchData();
   }, []);
 
-  const handleUnsave = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  // Organize items
-  const upcomingDeadlineItems = items
-    .filter((item) => item.scholarship.deadline !== null)
-    .sort((a, b) => new Date(a.scholarship.deadline!).getTime() - new Date(b.scholarship.deadline!).getTime());
-
-  const openDeadlineItems = items.filter((item) => item.scholarship.deadline === null);
   const alertedItems = items.filter((item) => item.changeAlerted);
+
+  const filters = [
+    { id: "all", label: "All Saves" },
+    { id: "urgent", label: "Closing < 14 Days" },
+    { id: "fully_funded", label: "Fully Funded" },
+    { id: "updated", label: "Recently Updated" },
+  ];
 
   return (
     <div className="min-h-screen bg-bg flex flex-col items-center">
-      <div className="w-full max-w-[1000px] px-6 lg:px-8 pt-6 pb-24">
+      <div className="w-full max-w-[1440px] px-6 lg:px-8 pt-6 pb-24">
         
         {/* Back row */}
         <div className="mb-4">
@@ -76,20 +74,45 @@ export default function SavedPage() {
         </div>
 
         {/* HEADER ROW */}
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-[28px] font-editorial font-normal text-ink leading-tight">
-              Saved
+            <h1 className="text-[32px] md:text-[40px] font-editorial font-normal text-ink leading-tight tracking-tight">
+              The Tracker
             </h1>
-            <p className="text-[13px] font-ui text-ink-secondary mt-1">
-              {items.length} saved · {pendingReviews.length} to review
+            <p className="text-[14px] font-ui text-ink-secondary mt-1">
+              Your visual sanctuary for intellectual organization.
             </p>
+          </div>
+          
+          <div className="text-[13px] font-ui text-ink-secondary flex items-center gap-4">
+            <span>{items.length} total saves</span>
+            {pendingReviews.length > 0 && <span>· {pendingReviews.length} to review</span>}
           </div>
         </header>
 
+        {/* STICKY FILTER BAR */}
+        <div className="sticky top-0 z-30 bg-bg/95 backdrop-blur-md border-b border-border py-4 mb-8 -mx-6 px-6 lg:-mx-8 lg:px-8 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-2">
+            {filters.map(f => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full font-ui text-[13px] whitespace-nowrap transition-all duration-200 border",
+                  activeFilter === f.id 
+                    ? "bg-ink text-bg border-ink font-medium" 
+                    : "bg-surface text-ink-secondary border-border hover:bg-surface-hover hover:text-ink hover:border-border-strong"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* FRESHNESS ALERT BANNERS */}
-        {alertedItems.length > 0 && (
-          <div className="mb-8">
+        {alertedItems.length > 0 && activeFilter === "all" && (
+          <div className="mb-10">
             {alertedItems.map(item => (
               <div 
                 key={`alert-${item.id}`}
@@ -111,12 +134,12 @@ export default function SavedPage() {
         )}
 
         {/* REVIEW PROMPTS */}
-        {pendingReviews.length > 0 && (
-          <div className="mb-8">
+        {pendingReviews.length > 0 && activeFilter === "all" && (
+          <div className="mb-10">
             <div className="text-[11px] font-ui font-medium text-moss tracking-[0.1em] uppercase mb-4">
               Rate your matches
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 max-w-2xl">
               {pendingReviews.map((item) => (
                 <div key={`review-${item.id}`} className="bg-surface border border-border rounded-xl p-4">
                   <ReviewPrompt 
@@ -132,13 +155,19 @@ export default function SavedPage() {
         )}
 
         {/* PUSH PERMISSION */}
-        <PushPermission />
+        <div className="mb-8">
+          <PushPermission />
+        </div>
 
-        {/* SAVED LIST */}
+        {/* SAVED LIST (COLLECTION BOARD) */}
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="flex gap-6 overflow-hidden min-h-[50vh]">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-surface border border-border rounded-xl animate-pulse" />
+              <div key={i} className="w-[320px] shrink-0 space-y-4">
+                <div className="w-32 h-6 bg-surface border border-border rounded animate-pulse" />
+                <div className="h-48 bg-surface border border-border rounded-xl animate-pulse" />
+                <div className="h-64 bg-surface border border-border rounded-xl animate-pulse" />
+              </div>
             ))}
           </div>
         ) : error ? (
@@ -146,33 +175,7 @@ export default function SavedPage() {
         ) : items.length === 0 ? (
           <ErrorState type="empty-saved" />
         ) : (
-          <div className="space-y-10">
-            {upcomingDeadlineItems.length > 0 && (
-              <section>
-                <div className="text-[11px] font-ui font-medium uppercase tracking-[0.1em] text-ink-tertiary mb-3">
-                  Upcoming Deadlines
-                </div>
-                <div className="flex flex-col">
-                  {upcomingDeadlineItems.map((item) => (
-                    <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {openDeadlineItems.length > 0 && (
-              <section>
-                <div className="text-[11px] font-ui font-medium uppercase tracking-[0.1em] text-ink-tertiary mb-3">
-                  Open Deadline
-                </div>
-                <div className="flex flex-col">
-                  {openDeadlineItems.map((item) => (
-                    <SavedItem key={item.id} item={item} onUnsave={handleUnsave} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+          <CollectionBoard initialItems={items} activeFilter={activeFilter} />
         )}
 
       </div>

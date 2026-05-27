@@ -1,53 +1,66 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function FinalCTA() {
   const router = useRouter();
 
-  // Temporary increase grain overlay opacity
-  useEffect(() => {
-    const grain = document.querySelector('.grain-overlay') as HTMLElement;
-    if (grain) {
-      // It's technically better to use a localized grain or CSS class,
-      // but since the grain is global we can just rely on the component mount.
-      // We'll just render a localized grain here to keep it strictly contained to the moss section.
+  const scrollVariants = {
+    hidden: { opacity: 0, y: 48, filter: 'blur(4px)' },
+    visible: { 
+      opacity: 1, y: 0, filter: 'blur(0px)',
+      transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as any, staggerChildren: 0.1 }
     }
-  }, []);
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as any } }
+  };
 
   return (
-    <section className="relative py-[clamp(80px,12vw,140px)] bg-moss w-full text-white overflow-hidden text-center">
-      {/* Localized stronger grain for this section only */}
+    <section 
+      data-section="dark"
+      className="bg-[#080808] border-t border-white/[0.06] py-[clamp(100px,15vw,160px)] px-6 overflow-hidden relative"
+    >
+      {/* Ambient gradient */}
       <div 
-        className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse 60% 80% at 50% 100%, rgba(95,111,82,0.08) 0%, transparent 70%)`
+        }}
       />
 
-      <div className="max-w-[1440px] mx-auto w-full px-6 lg:px-12 relative z-10 flex flex-col items-center">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+      <div className="max-w-[800px] mx-auto text-center relative z-10 flex flex-col items-center">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as any }}
+          variants={scrollVariants}
+          className="flex flex-col items-center w-full"
         >
-          <div className="text-[11px] font-ui font-medium tracking-[0.12em] uppercase mb-6 text-white/90">
-            Start Free Today
-          </div>
-          <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-editorial font-light leading-[1.1] mb-6 max-w-2xl mx-auto">
-            {"Your scholarship is out there.\nLet's find it."}
-          </h2>
-          <p className="text-[18px] font-ui font-normal text-white/80 mb-10 max-w-md mx-auto">
-            Join thousands of African students already matched.
-          </p>
+          <motion.div variants={itemVariants} className="font-ui text-[11px] font-medium uppercase tracking-[0.14em] text-moss mb-8">
+            READY?
+          </motion.div>
           
-          <button
-            onClick={() => router.push('/sign-up')}
-            className="h-14 px-8 bg-white text-moss rounded-full font-ui font-medium text-[15px] hover:bg-bg transition-colors inline-flex items-center gap-2 shadow-xl shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            Find my scholarships &rarr;
-          </button>
+          <motion.h2 variants={itemVariants} className="font-editorial text-[clamp(3.5rem,8vw,6rem)] font-light text-[#F4F1EB] leading-[0.95] tracking-[-0.02em] mb-12">
+            Stop searching.<br />
+            Start applying.
+          </motion.h2>
+
+          <motion.div variants={itemVariants} className="flex flex-col items-center">
+            <button
+              onClick={() => router.push('/sign-up')}
+              className="px-[32px] py-[16px] bg-moss text-white rounded-full font-ui text-[16px] font-medium transition-all duration-300 hover:bg-[#3F4F38] hover:-translate-y-[2px] shadow-[0_12px_32px_rgba(95,111,82,0.4)] mb-4"
+            >
+              Find my scholarships &rarr;
+            </button>
+            <p className="font-ui text-[13px] text-white/30">
+              No account required to explore.
+            </p>
+          </motion.div>
         </motion.div>
       </div>
     </section>

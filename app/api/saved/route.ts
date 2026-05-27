@@ -95,3 +95,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "internal_error", details: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { scholarshipId } = body;
+
+    if (!scholarshipId) {
+      return NextResponse.json({ error: "scholarshipId required" }, { status: 400 });
+    }
+
+    // Try deleting the specific save
+    await db.savedScholarship.deleteMany({
+      where: {
+        userId,
+        scholarshipId
+      }
+    });
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: any) {
+    console.error("DELETE /api/saved — FULL ERROR:", error);
+    return NextResponse.json({ error: "internal_error", details: error.message }, { status: 500 });
+  }
+}

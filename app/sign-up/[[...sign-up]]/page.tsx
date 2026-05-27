@@ -1,10 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function SignUpPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-bg">
       
@@ -60,69 +66,67 @@ export default function SignUpPage() {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="w-full lg:w-1/2 min-h-screen flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-[420px] bg-surface border border-border rounded-xl p-8 md:p-10 shadow-sm">
-          
-          {/* Mobile Logo Mark */}
-          <div className="w-10 h-10 rounded-xl bg-moss-light flex items-center justify-center mb-6 lg:hidden">
-            <span className="text-moss font-editorial text-[16px] leading-none tracking-wider font-bold">SM</span>
-          </div>
+      <div className="w-full lg:w-1/2 min-h-screen flex flex-col items-center justify-center p-6 md:p-12">
+        
+        {/* Mobile Logo Mark */}
+        <div className="w-10 h-10 rounded-xl bg-moss-light flex items-center justify-center mb-6 lg:hidden">
+          <span className="text-moss font-editorial text-[16px] leading-none tracking-wider font-bold">SM</span>
+        </div>
 
-          <h2 className="text-[28px] font-editorial font-normal text-ink leading-tight">
-            Begin your journey.
-          </h2>
-          <p className="text-[14px] font-ui text-ink-secondary mt-2 mb-8">
-            Create your account to discover scholarships matched to you.
-          </p>
-
-          <div>
+        <div className="w-full flex justify-center">
+          {mounted ? (
             <SignUp 
+              forceRedirectUrl="/onboarding/step/1"
               appearance={{
                 variables: {
                   colorPrimary: '#5F6F52',
-                  colorBackground: 'transparent',
+                  colorBackground: 'var(--color-surface)',
                   colorText: 'var(--color-ink)',
                   colorInputBackground: 'var(--color-bg)',
                   colorInputText: 'var(--color-ink)',
-                  borderRadius: '10px',
+                  colorTextSecondary: 'var(--color-ink-secondary)',
+                  colorBorder: 'var(--color-border)',
+                  borderRadius: '12px',
                   fontFamily: 'var(--font-ui)',
                 },
                 elements: {
                   rootBox: { width: "100%" },
                   card: { 
-                    boxShadow: 'none', 
-                    border: 'none', 
-                    padding: 0,
+                    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)', 
+                    border: '1px solid var(--color-border)', 
+                    padding: '32px',
                     width: "100%",
-                    backgroundColor: "transparent"
+                    backgroundColor: "var(--color-surface)"
                   },
-                  header: { display: "none" },
                   formButtonPrimary: {
                     background: 'var(--color-moss)',
                     borderRadius: '9999px',
                     fontFamily: 'var(--font-ui)',
                     textTransform: 'none',
-                    fontSize: '15px',
+                    fontSize: '14px',
                     fontWeight: 500,
-                    height: '44px'
+                    height: '40px',
+                    '&:hover': {
+                      background: 'var(--color-moss-dark)'
+                    }
                   },
                   socialButtonsBlockButton: {
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     border: '1px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg)',
+                    backgroundColor: 'var(--color-surface)',
+                    '&:hover': {
+                      backgroundColor: 'var(--color-bg-hover)'
+                    }
                   },
-                  footerAction: { display: "none" }
                 }
               }}
             />
-          </div>
-
-          <div className="mt-8 text-center text-[13px] font-ui text-ink-secondary">
-            Already have an account?{" "}
-            <Link href="/sign-in" className="text-moss hover:text-moss-dark font-medium transition-colors">
-              Sign in
-            </Link>
-          </div>
+          ) : (
+            <div className="w-full flex flex-col items-center justify-center py-12 bg-surface border border-border rounded-xl p-8 shadow-sm">
+              <div className="w-8 h-8 rounded-full border-2 border-moss border-t-transparent animate-spin mb-4" />
+              <span className="text-[13px] font-ui text-ink-secondary">Loading secure registration...</span>
+            </div>
+          )}
         </div>
       </div>
       

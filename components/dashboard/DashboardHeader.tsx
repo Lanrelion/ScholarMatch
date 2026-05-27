@@ -1,107 +1,86 @@
 "use client";
 
-import React from "react";
-import { Search, Bell, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { MagnifyingGlass, Bell } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useSearchOverlay } from "@/hooks/useSearchOverlay"; // We will create this
 
 interface Props {
   firstName: string | null;
+  totalMatches?: number;
+  newMatchesCount?: number;
+  urgentDeadlineDays?: number;
 }
 
-export function DashboardHeader({ firstName }: Props) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+export function DashboardHeader({ firstName, totalMatches = 0, newMatchesCount = 0, urgentDeadlineDays = 0 }: Props) {
+  const { openSearch } = useSearchOverlay();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 17) return "Good afternoon";
-    return "Good evening";
+    if (hour >= 5 && hour < 12) return "Good morning";
+    if (hour >= 12 && hour < 17) return "Good afternoon";
+    if (hour >= 17 && hour < 21) return "Good evening";
+    return "Late night";
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams(window.location.search);
-    if (searchQuery) params.set("q", searchQuery);
-    else params.delete("q");
-    router.push(`/dashboard?${params.toString()}`, { scroll: false });
+  const getSubLine = () => {
+    if (newMatchesCount > 0) return `${newMatchesCount} new scholarships match your profile.`;
+    if (urgentDeadlineDays > 0 && urgentDeadlineDays <= 14) return `One of your saved scholarships closes in ${urgentDeadlineDays} days.`;
+    return `You have ${totalMatches} scholarships waiting to be explored.`;
   };
 
+  const greeting = mounted ? getGreeting() : "Welcome";
+  const displayName = firstName ? `, ${firstName}.` : ".";
+  
+  // Open search on Cmd+K
   useEffect(() => {
-    if (!isSearchOpen && searchQuery) {
-      // Clear search if closed and query exists
-      setSearchQuery("");
-      const params = new URLSearchParams(window.location.search);
-      params.delete("q");
-      router.push(`/dashboard?${params.toString()}`, { scroll: false });
-    }
-  }, [isSearchOpen]);
-
-  const greeting = getGreeting();
-  const displayName = firstName ? `, ${firstName}` : "";
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        openSearch();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [openSearch]);
 
   return (
-    <header className="px-6 py-5 flex items-center justify-between bg-bg/90 backdrop-blur-md sticky top-0 z-30 transition-all duration-300 border-b border-border">
-      {!isSearchOpen ? (
-        <>
-          <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
-            <h1 className="text-2xl font-editorial font-medium text-ink leading-tight tracking-tight">
-              {greeting}{displayName}
-            </h1>
-            <p className="text-ink-secondary text-sm font-ui mt-0.5">
-              Let's find your perfect match
-            </p>
-          </div>
+    <header className="px-6 md:px-8 pt-7 pb-4 flex items-start justify-between bg-bg sticky top-0 z-30">
+      <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
+        <h1 className="text-[28px] font-editorial font-light text-ink leading-tight tracking-tight">
+          {greeting}{displayName}
+        </h1>
+        <p className="text-ink-secondary text-[14px] font-ui mt-1">
+          {mounted ? getSubLine() : "Loading your matches..."}
+        </p>
+      </div>
 
-          <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-4 duration-500">
-            <button
-              onClick={() => setIsSearchOpen(true)}
-              aria-label="Search scholarships"
-              className="btn-icon"
-            >
-              <Search size={20} />
-            </button>
-            <Link
-              href="/alerts"
-              aria-label="Notifications"
-              className="btn-icon relative"
-            >
-              <Bell size={20} />
-              <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-urgent rounded-full border-2 border-surface shadow-sm" />
-            </Link>
-          </div>
-        </>
-      ) : (
-        <form 
-          onSubmit={handleSearchSubmit}
-          className="flex-1 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300"
+      <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-500">
+        {/* Search icon (All screens) */}
+        <button
+          onClick={openSearch}
+          className="btn-icon"
+          aria-label="Search scholarships"
         >
-          <div className="flex-1 relative group">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[var(--color-primary)] transition-colors">
-              <Search size={18} />
-            </div>
-            <input
-              autoFocus
-              type="text"
-              placeholder="Search by title, field or provider..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 pl-11 pr-4 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl text-sm font-bold placeholder:text-gray-400 outline-none focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/5 transition-all"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsSearchOpen(false)}
-            className="w-11 h-11 flex items-center justify-center bg-gray-50 text-gray-400 hover:text-gray-600 rounded-2xl transition-all active:scale-90"
-          >
-            <X size={20} />
-          </button>
-        </form>
-      )}
+          <MagnifyingGlass size={20} className="text-ink-secondary" />
+        </button>
+
+        <Link
+          href="/alerts"
+          aria-label="Notifications"
+          className="btn-icon relative"
+        >
+          <Bell size={20} className="text-ink-secondary" />
+          {urgentDeadlineDays > 0 && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-urgent rounded-full border border-surface shadow-sm" />
+          )}
+        </Link>
+      </div>
     </header>
   );
 }

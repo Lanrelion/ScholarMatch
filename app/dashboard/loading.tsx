@@ -1,29 +1,24 @@
 import React from "react";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen bg-white flex flex-col max-w-[480px] mx-auto">
-      {/* Header Skeleton */}
-      <div className="px-4 pt-5 pb-3 flex items-start justify-between bg-white sticky top-0 z-30">
-        <div className="flex flex-col gap-2">
-          <div className="h-6 w-32 bg-gray-100 rounded-lg animate-pulse" />
-          <div className="h-3 w-24 bg-gray-50 rounded-lg animate-pulse" />
+    <div className="flex flex-col flex-1 min-h-screen bg-bg">
+      {/* Header Skeleton mimicking DashboardHeader */}
+      <header className="px-6 md:px-8 pt-7 pb-4 flex items-start justify-between bg-bg sticky top-0 z-30">
+        <div className="flex flex-col gap-3 mt-1">
+          <div className="h-7 w-48 rounded-md skeleton" />
+          <div className="h-3.5 w-64 rounded-md skeleton" />
         </div>
-        <div className="flex gap-2">
-          <div className="w-10 h-10 bg-gray-100 rounded-full animate-pulse" />
-          <div className="w-10 h-10 bg-gray-100 rounded-full animate-pulse" />
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full skeleton" />
+          <div className="w-9 h-9 rounded-full skeleton" />
         </div>
-      </div>
-
-      {/* Summary Card Skeleton */}
-      <div className="mx-4 mb-4 h-12 bg-gray-50 rounded-xl animate-pulse" />
-
-      {/* Feed Skeleton */}
-      <div className="px-4 flex flex-col gap-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-48 bg-gray-50 rounded-2xl animate-pulse" />
-        ))}
-      </div>
+      </header>
+      
+      <main className="flex-1">
+        <DashboardSkeleton />
+      </main>
     </div>
   );
 }

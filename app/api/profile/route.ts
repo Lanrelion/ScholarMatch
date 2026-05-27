@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       email,
     } = body;
 
-    if (!firstName || !lastName || !nationality || !currentDegree || !fieldOfStudy || needsFinancialAid == null) {
+    if (!firstName || !nationality || !currentDegree || !fieldOfStudy || needsFinancialAid == null) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 

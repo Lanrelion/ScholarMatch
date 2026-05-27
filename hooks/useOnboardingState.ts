@@ -4,31 +4,46 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 
 export type OnboardingState = {
+  // Screen 1
   firstName: string;
   lastName: string;
-  nationality: string;
-  currentDegree: "UNDERGRADUATE" | "MASTERS" | "PHD" | "";
-  fieldOfStudy: string;
-  gpa: string;
+  aspiration: string;
+
+  // Screen 2
+  nationality: string;        // ISO code e.g. "NG"
+  nationalityName: string;    // e.g. "Nigeria"
+
+  // Screen 3
+  gpa: number | null;
   gpaScale: 4 | 5 | 7 | 100;
-  needsFinancialAid: boolean | null;
-  workExperienceYears: string;
-  targetCountry: string;
-  aspiration: string | null;
+
+  // Screen 4
+  destinations: string[];     // ISO codes, empty = anywhere
+
+  // Screen 5
+  fields: string[];
+
+  // Screen 6
+  currentDegree: "UNDERGRADUATE" | "MASTERS" | "PHD" | "";
+  workExperienceYears: number;
+
+  // Derived
+  needsFinancialAid: boolean;
 };
 
 const initialState: OnboardingState = {
   firstName: "",
   lastName: "",
+  aspiration: "",
   nationality: "",
-  currentDegree: "",
-  fieldOfStudy: "",
-  gpa: "",
+  nationalityName: "",
+  gpa: null,
   gpaScale: 4,
-  needsFinancialAid: null,
-  workExperienceYears: "",
-  targetCountry: "",
-  aspiration: null,
+  destinations: [],
+  fields: [],
+  currentDegree: "",
+  workExperienceYears: 0,
+  needsFinancialAid: true,
 };
 
 const stateCache: Record<string, OnboardingState> = {};
@@ -42,11 +57,64 @@ export function useOnboardingState() {
   }
 
   const [state, setState] = useState<OnboardingState>(stateCache[key]);
+  const [loading, setLoading] = useState(true);
 
-  // Sync state if user changes (e.g. from anonymous to signed in)
+  // Sync state if user changes (e.g. from anonymous to signed in) and fetch profile
   useEffect(() => {
-    setState(stateCache[key]);
-  }, [key]);
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    // If already loaded in cache (i.e. not empty name), don't fetch again
+    if (stateCache[key] && stateCache[key].firstName !== "") {
+      setState(stateCache[key]);
+      setLoading(false);
+      return;
+    }
+
+    let isSubscribed = true;
+
+    fetch("/api/profile")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch profile");
+        return res.json();
+      })
+      .then((data) => {
+        if (isSubscribed && data.exists && data.profile) {
+          const p = data.profile;
+          
+          // Map DB profile to OnboardingState
+          const loadedState: OnboardingState = {
+            firstName: p.firstName || "",
+            lastName: p.lastName || "",
+            aspiration: "", // Not stored in DB
+            nationality: p.nationality || "",
+            nationalityName: p.nationality || "", // Will be updated by selector
+            gpa: p.gpa,
+            gpaScale: (p.gpaScale as any) || 4,
+            destinations: p.countryOfStudy ? [p.countryOfStudy] : [],
+            fields: p.fieldOfStudy ? p.fieldOfStudy.split(", ") : [],
+            currentDegree: p.currentDegree || "",
+            workExperienceYears: p.workExperienceYears || 0,
+            needsFinancialAid: p.needsFinancialAid ?? true,
+          };
+
+          stateCache[key] = loadedState;
+          setState(loadedState);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load profile from database, using initial state:", err);
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [key, user]);
 
   const updateField = <K extends keyof OnboardingState>(
     field: K,
@@ -62,26 +130,21 @@ export function useOnboardingState() {
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
-        return state.firstName.trim().length > 0 && state.lastName.trim().length > 0;
+        return state.firstName.trim().length > 0;
       case 2:
         return state.nationality.length === 2;
       case 3:
-        return ["UNDERGRADUATE", "MASTERS", "PHD"].includes(state.currentDegree);
+        return true; // GPA is optional
       case 4:
-        return state.fieldOfStudy.trim().length > 0;
+        return state.destinations.length > 0;
       case 5:
-        if (state.needsFinancialAid === null) return false;
-        if (state.gpa !== "") {
-          const num = parseFloat(state.gpa);
-          if (isNaN(num) || num < 0 || num > state.gpaScale) return false;
-        }
-        return true;
+        return state.fields.length > 0;
       case 6:
-        return state.targetCountry.length === 2 && state.workExperienceYears.trim().length > 0;
+        return ["UNDERGRADUATE", "MASTERS", "PHD"].includes(state.currentDegree);
       default:
         return false;
     }
   };
 
-  return { state, updateField, isStepValid };
+  return { state, updateField, isStepValid, loading };
 }

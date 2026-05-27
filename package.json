@@ -13,6 +13,7 @@
     "@anthropic-ai/sdk": "^0.95.2",
     "@base-ui/react": "^1.4.1",
     "@clerk/nextjs": "^6.x",
+    "@hello-pangea/dnd": "^18.0.1",
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/adapter-pg": "^7.x",
     "@prisma/client": "^7.x",
@@ -28,7 +29,8 @@
     "react-dom": "^19.0.0",
     "resend": "^4.x",
     "svix": "^1.x",
-    "tailwind-merge": "^3.x"
+    "tailwind-merge": "^3.x",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.x",

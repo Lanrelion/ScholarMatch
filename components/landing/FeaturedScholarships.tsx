@@ -34,7 +34,7 @@ export default function FeaturedScholarships() {
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as any }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as any as any }}
           >
             <div className="text-[11px] font-ui font-medium text-moss tracking-[0.12em] uppercase mb-4">
               Open Now

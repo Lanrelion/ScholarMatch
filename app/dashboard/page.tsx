@@ -2,9 +2,12 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { ProfileSummaryCard } from "@/components/dashboard/ProfileSummaryCard";
 import { DiscoveryFeed } from "@/components/dashboard/DiscoveryFeed";
+import { SearchOverlay } from "@/components/dashboard/SearchOverlay";
 import { scoreScholarship } from "@/lib/matching/scoreScholarship";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -39,20 +42,11 @@ export default async function DashboardPage() {
     ]
   };
 
-  const [scholarships, savedItems, reviewCount] = await Promise.all([
-    db.scholarship.findMany({
-      where: whereClause,
-      take: 20,
-      orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
-    }),
-    db.savedScholarship.findMany({
-      where: { userId },
-      select: { scholarshipId: true, id: true }
-    }),
-    db.matchReview.count({
-      where: { userId }
-    })
-  ]);
+  const scholarships = await db.scholarship.findMany({
+    where: whereClause,
+    take: 40,
+    orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
+  });
 
   // Transform and score scholarships on the server
   const initialScholarships = scholarships.map(s => {
@@ -63,29 +57,50 @@ export default async function DashboardPage() {
       matchBreakdown,
       amount: s.amount ? Number(s.amount) : null
     }));
-  }).sort((a, b) => b.matchScore - a.matchScore);
+  }).sort((a: any, b: any) => b.matchScore - a.matchScore);
 
-  const initialSavedIds: Record<string, string> = {};
-  savedItems.forEach(item => {
-    initialSavedIds[item.scholarshipId] = item.id;
+  // Compute metrics for header
+  const totalMatches = initialScholarships.length;
+  // Mock new matches for demo
+  const newMatchesCount = totalMatches > 5 ? 3 : 0;
+  
+  // Calculate urgent deadline days
+  let urgentDeadlineDays = 0;
+  const now = new Date();
+  const withDeadlines = initialScholarships.filter((s: any) => s.deadline);
+  if (withDeadlines.length > 0) {
+    const closest = withDeadlines.reduce((prev: any, curr: any) => {
+      return new Date(curr.deadline) < new Date(prev.deadline) ? curr : prev;
+    });
+    const daysLeft = Math.ceil((new Date(closest.deadline).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysLeft >= 0 && daysLeft <= 30) {
+      urgentDeadlineDays = daysLeft;
+    }
+  }
+
+  // Fetch initial saved IDs for the current user to initialize the DiscoveryFeed
+  const savedScholarships = await db.savedScholarship.findMany({
+    where: { userId },
+    select: { scholarshipId: true }
   });
+  const initialSavedIds = savedScholarships.map(s => s.scholarshipId);
 
   return (
-    <div className="flex flex-col flex-1">
-      <DashboardHeader firstName={profile.firstName} />
-      <ProfileSummaryCard 
-        nationality={profile.nationality}
-        degreeLevel={profile.currentDegree}
-        fieldOfStudy={profile.fieldOfStudy}
+    <div className="flex flex-col flex-1 min-h-screen">
+      <DashboardHeader 
+        firstName={profile.firstName} 
+        totalMatches={totalMatches}
+        newMatchesCount={newMatchesCount}
+        urgentDeadlineDays={urgentDeadlineDays}
       />
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1">
         <DiscoveryFeed 
           initialScholarships={initialScholarships}
-          initialSavedIds={initialSavedIds}
-          initialReviewCount={reviewCount}
           profile={JSON.parse(JSON.stringify(profile))}
+          initialSavedIds={initialSavedIds}
         />
       </main>
+      <SearchOverlay scholarships={initialScholarships} />
     </div>
   );
 }

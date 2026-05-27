@@ -1,216 +1,134 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { ScholarshipCard } from "@/components/dashboard/ScholarshipCard";
-
-const MOCK_SCHOLARSHIPS = [
-  {
-    id: "hero-1",
-    title: "Mastercard Foundation Scholars Program",
-    provider: "University of Edinburgh",
-    deadline: new Date(Date.now() + 86400000 * 30),
-    matchScore: 0.98,
-    eligibleDegrees: ["MASTERS", "UNDERGRADUATE"],
-    currency: "GBP",
-    amount: null,
-    eligibilityParsed: { fundingType: "full" },
-    sourceUrl: "",
-    sourceDomain: "ed.ac.uk",
-    description: null,
-    eligibleNationalities: ["African"],
-    fieldsOfStudy: [],
-    eligibilityRaw: null,
-    verified: true,
-    isActive: true,
-    lastCrawledAt: null,
-    lastChangedAt: null,
-    matchBreakdown: {
-      nationality: { pass: true, label: "African citizens" },
-      degreeLevel: { pass: true, label: "Masters" },
-      field: { pass: true, label: "Any" },
-      gpa: { pass: true, label: "Required" },
-      financialNeed: { pass: true, label: "Required" },
-      workExperience: { pass: true, label: "Not required" },
-    }
-  },
-  {
-    id: "hero-2",
-    title: "Chevening Scholarships",
-    provider: "UK Government",
-    deadline: new Date(Date.now() + 86400000 * 45),
-    matchScore: 0.95,
-    eligibleDegrees: ["MASTERS"],
-    currency: "GBP",
-    amount: null,
-    eligibilityParsed: { fundingType: "full" },
-    sourceUrl: "",
-    sourceDomain: "chevening.org",
-    description: null,
-    eligibleNationalities: ["Global"],
-    fieldsOfStudy: [],
-    eligibilityRaw: null,
-    verified: true,
-    isActive: true,
-    lastCrawledAt: null,
-    lastChangedAt: null,
-    matchBreakdown: {
-      nationality: { pass: true, label: "Global" },
-      degreeLevel: { pass: true, label: "Masters" },
-      field: { pass: true, label: "Any" },
-      gpa: { pass: true, label: "Required" },
-      financialNeed: { pass: true, label: "Not strictly need-based" },
-      workExperience: { pass: true, label: "2 years required" },
-    }
-  },
-  {
-    id: "hero-3",
-    title: "Rhodes Scholarship",
-    provider: "Oxford University",
-    deadline: new Date(Date.now() + 86400000 * 60),
-    matchScore: 0.92,
-    eligibleDegrees: ["MASTERS", "PHD"],
-    currency: "GBP",
-    amount: null,
-    eligibilityParsed: { fundingType: "full" },
-    sourceUrl: "",
-    sourceDomain: "ox.ac.uk",
-    description: null,
-    eligibleNationalities: ["Global"],
-    fieldsOfStudy: [],
-    eligibilityRaw: null,
-    verified: true,
-    isActive: true,
-    lastCrawledAt: null,
-    lastChangedAt: null,
-    matchBreakdown: {
-      nationality: { pass: true, label: "Global" },
-      degreeLevel: { pass: true, label: "Masters, PhD" },
-      field: { pass: true, label: "Any" },
-      gpa: { pass: true, label: "Required" },
-      financialNeed: { pass: true, label: "Not required" },
-      workExperience: { pass: true, label: "Not required" },
-    }
-  }
-];
+import { motion } from "framer-motion";
 
 export default function Hero() {
   const router = useRouter();
-  const heroRef = useRef<HTMLDivElement>(null);
-  
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"]
-  });
-
-  const cardsY = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
-  const glowY = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"]);
 
   return (
-    <section ref={heroRef} className="relative min-h-screen pt-24 pb-16 flex items-center overflow-hidden">
-      <div className="max-w-[1440px] mx-auto w-full px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-[55%_45%] items-center">
-        {/* Left Side: Editorial Content */}
-        <div className="flex flex-col pt-12 lg:pt-0 z-10 relative">
+    <section 
+      data-section="dark"
+      className="relative min-h-screen bg-[#080808] flex flex-col items-center justify-center pt-[120px] px-6 pb-[80px] overflow-hidden"
+    >
+      {/* Ambient gradient mesh */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 60% at 20% 40%, rgba(95,111,82,0.12) 0%, transparent 60%),
+            radial-gradient(ellipse 60% 50% at 80% 60%, rgba(201,168,106,0.08) 0%, transparent 60%)
+          `
+        }}
+      />
+      {/* Grain texture overlay */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-[0.04]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          mixBlendMode: "multiply",
+          backgroundSize: "200px"
+        }}
+      />
+
+      <div className="w-full max-w-[900px] z-10 text-center flex flex-col items-center">
+        {/* Step 1: Eyebrow */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="font-ui text-[12px] font-medium text-white/45 tracking-[0.14em] uppercase mb-[28px]"
+        >
+          AI-POWERED SCHOLARSHIP MATCHING FOR AFRICAN STUDENTS
+        </motion.div>
+
+        {/* Step 2: Headline */}
+        <h1 className="font-editorial font-light text-[clamp(3.5rem,8vw,7rem)] leading-[0.93] tracking-[-0.025em] text-[#F4F1EB] max-w-[820px]">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
+            transition={{ delay: 0.5, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
           >
-            <div className="text-[11px] font-ui font-medium text-moss tracking-[0.12em] uppercase mb-8">
-              Scholarship Discovery
-            </div>
-            
-            <h1 className="text-[clamp(2.5rem,8vw,3.5rem)] lg:text-[clamp(3rem,6vw,5.5rem)] font-editorial font-light text-ink leading-[0.95] tracking-[-0.02em] whitespace-pre-line">
-              {"Your next chapter\nbegins somewhere\nunexpected."}
-            </h1>
-            
-            <p className="text-[1.125rem] font-ui font-normal text-ink-secondary leading-[1.6] max-w-[420px] mt-[28px]">
-              Discover scholarships curated around your ambitions, background, and future.
-            </p>
-
-            <div className="flex items-center gap-4 mt-[40px]">
-              <button
-                onClick={() => router.push('/sign-up')}
-                className="h-12 px-8 bg-moss text-white rounded-full font-ui font-medium text-[15px] hover:bg-moss-dark transition-colors"
-              >
-                Start matching &rarr;
-              </button>
-              <button
-                onClick={() => {
-                  const el = document.getElementById("how-it-works");
-                  el?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="h-12 px-6 text-ink hover:text-moss transition-colors font-ui font-medium text-[15px]"
-              >
-                See how it works
-              </button>
-            </div>
-
-            <div className="flex items-center gap-[32px] mt-[48px] text-[13px] font-ui text-ink-secondary">
-              <span>4M+ African students</span>
-              <div className="h-4 w-px bg-border" />
-              <span>500+ scholarships</span>
-              <div className="h-4 w-px bg-border" />
-              <span>Free forever</span>
-            </div>
+            Your future
           </motion.div>
-          
-          {/* Mobile Single Card Feature */}
-          <div className="lg:hidden mt-16 pointer-events-none">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
-            >
-              <ScholarshipCard scholarship={MOCK_SCHOLARSHIPS[0] as any} />
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Right Side: Floating Cards (Desktop Only) */}
-        <div className="hidden lg:block relative h-[600px] w-full mt-[-60px]">
-          <motion.div 
-            style={{ y: glowY }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none"
-            initial={{ background: "radial-gradient(circle, rgba(95,111,82,0) 0%, rgba(201,168,106,0) 40%, transparent 70%)" }}
-            animate={{ background: "radial-gradient(circle, rgba(95,111,82,0.15) 0%, rgba(201,168,106,0.08) 40%, transparent 70%)" }}
-            transition={{ duration: 2 }}
-          />
-
-          <motion.div style={{ y: cardsY }} className="relative w-full h-full">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
-              className="absolute pointer-events-none scale-90"
-              style={{ top: "160px", right: "80px", zIndex: 10, width: "320px" }}
-            >
-              <ScholarshipCard scholarship={MOCK_SCHOLARSHIPS[2] as any} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
-              className="absolute pointer-events-none scale-95"
-              style={{ top: "80px", right: "40px", zIndex: 20, width: "320px" }}
-            >
-              <ScholarshipCard scholarship={MOCK_SCHOLARSHIPS[1] as any} />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] as any }}
-              className="absolute pointer-events-none"
-              style={{ top: "0px", right: "0px", zIndex: 30, width: "320px" }}
-            >
-              <ScholarshipCard scholarship={MOCK_SCHOLARSHIPS[0] as any} />
-            </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
+          >
+            already has
           </motion.div>
-        </div>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
+          >
+            <span className="text-[#8DA67D]">funding.</span>
+          </motion.div>
+        </h1>
+
+        {/* Step 3: Subtext */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.1, duration: 0.7 }}
+          className="font-ui text-[18px] font-normal text-[#F4F1EB]/55 leading-[1.6] max-w-[520px] mx-auto mt-[24px]"
+        >
+          Discover fully funded scholarships matched to your nationality, degree, and ambitions. Built for Africa.
+        </motion.p>
+
+        {/* Step 4: CTA Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3, duration: 0.6 }}
+          className="flex flex-wrap items-center justify-center gap-[12px] mt-[40px]"
+        >
+          <button
+            onClick={() => router.push('/sign-up')}
+            className="px-[28px] py-[14px] bg-moss text-white rounded-full font-ui text-[15px] font-medium transition-all duration-300 hover:bg-[#3F4F38] hover:-translate-y-[2px] shadow-[0_12px_32px_rgba(95,111,82,0.4)]"
+          >
+            Find my scholarships &rarr;
+          </button>
+          <button
+            onClick={() => {
+              const el = document.getElementById("how-it-works");
+              el?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="px-[24px] py-[14px] bg-transparent text-white/60 border border-white/20 rounded-full font-ui text-[15px] font-normal transition-all duration-300 hover:border-white/50 hover:text-white hover:bg-white/5"
+          >
+            See how it works
+          </button>
+        </motion.div>
+
+        {/* Step 5: Social Proof */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.6, duration: 0.8 }}
+          className="flex flex-wrap items-center justify-center gap-[32px] mt-[56px] font-ui text-[13px] text-white/35"
+        >
+          <span>4M+ African students</span>
+          <div className="w-[1px] h-[14px] bg-white/10" />
+          <span>500+ scholarships</span>
+          <div className="w-[1px] h-[14px] bg-white/10" />
+          <span>54 countries</span>
+          <div className="w-[1px] h-[14px] bg-white/10" />
+          <span>Free forever</span>
+        </motion.div>
       </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-[32px] left-1/2 -translate-x-1/2 text-white/25"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </motion.div>
     </section>
   );
 }

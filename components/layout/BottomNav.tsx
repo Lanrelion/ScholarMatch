@@ -3,48 +3,25 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, BookmarkSimple, Bell, User } from "@phosphor-icons/react";
+import { Compass, BookmarkSimple, Bell, User, Clock } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { useNavCounts } from "@/hooks/useNavCounts";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [alertCount, setAlertCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const { fetchCounts, ...counts } = useNavCounts();
 
   useEffect(() => {
-    async function fetchCounts() {
-      try {
-        const [savedRes, reviewsRes] = await Promise.all([
-          fetch("/api/saved"),
-          fetch("/api/reviews")
-        ]);
-
-        const savedData = savedRes.ok ? await savedRes.json() : [];
-        const reviewsData = reviewsRes.ok ? await reviewsRes.json() : [];
-
-        const now = new Date();
-        const upcomingDeadlines = savedData.filter((item: any) => {
-          if (!item.scholarship.deadline) return false;
-          const deadline = new Date(item.scholarship.deadline);
-          const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          return daysLeft >= 0 && daysLeft <= 14; // Within 14 days
-        }).length;
-
-        const changeAlerts = savedData.filter((item: any) => item.changeAlerted).length;
-        const pendingReviews = reviewsData.length;
-
-        setAlertCount(upcomingDeadlines + changeAlerts + pendingReviews);
-      } catch (err) {
-        // Silently fail on nav
-      }
-    }
-    
+    setMounted(true);
     fetchCounts();
-  }, []);
+  }, [fetchCounts]);
 
   const tabs = [
-    { id: "discover", label: "Discover", icon: House, path: "/dashboard" },
-    { id: "saved", label: "Saved", icon: BookmarkSimple, path: "/saved" },
-    { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts", count: alertCount },
+    { id: "discover", label: "Discover", icon: Compass, path: "/dashboard", count: mounted ? counts.discoverCount : 0 },
+    { id: "saved", label: "Saved", icon: BookmarkSimple, path: "/saved", count: mounted ? counts.savedCount : 0 },
+    { id: "deadlines", label: "Deadlines", icon: Clock, path: "/deadlines", count: mounted ? counts.deadlinesCount : 0 },
+    { id: "alerts", label: "Alerts", icon: Bell, path: "/alerts", count: mounted ? counts.alertsCount : 0 },
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
   ];
 
@@ -69,9 +46,9 @@ export function BottomNav() {
                 weight={isActive ? "fill" : "regular"}
                 className={cn("transition-colors", isActive ? "text-moss" : "text-ink-secondary")} 
               />
-              {tab.id === "alerts" && (tab.count || 0) > 0 && (
-                <span className="absolute -top-1 -right-2 w-[18px] h-[18px] rounded-full bg-urgent text-white text-[10px] flex items-center justify-center font-bold">
-                  {tab.count}
+              {(tab.count || 0) > 0 && (
+                <span className="absolute -top-1 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-urgent text-white text-[10px] flex items-center justify-center font-bold">
+                  {(tab.count || 0) > 99 ? "99+" : tab.count}
                 </span>
               )}
             </div>

@@ -6,6 +6,9 @@ import DiscoveryFeed from "@/components/dashboard/DiscoveryFeed";
 import BottomNav from "@/components/layout/BottomNav";
 import PWAClient from "@/components/pwa/PWAClient";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect("/");

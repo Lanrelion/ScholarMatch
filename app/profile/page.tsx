@@ -3,11 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { motion } from "framer-motion";
-import { ArrowLeft, LockKey, CheckCircle, CircleNotch } from "@phosphor-icons/react";
+import { ArrowLeft, LockKey, CircleNotch, CheckCircle, Student, GlobeHemisphereWest, Bank } from "@phosphor-icons/react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
+
+// New Components
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ReadinessScore } from "@/components/profile/ReadinessScore";
+import { JourneyTimeline } from "@/components/profile/JourneyTimeline";
+import { AIInsights } from "@/components/profile/AIInsights";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 
 type ProfileData = {
   firstName: string;
@@ -20,6 +26,41 @@ type ProfileData = {
   needsFinancialAid: boolean | null;
   targetCountryOfStudy: string;
 };
+
+const DEGREE_OPTIONS = [
+  { value: "UNDERGRADUATE", label: "BSc / Undergraduate" },
+  { value: "MASTERS", label: "Masters" },
+  { value: "PHD", label: "PhD" },
+];
+
+const DESTINATION_OPTIONS = [
+  { value: "United Kingdom", label: "United Kingdom" },
+  { value: "Germany", label: "Germany" },
+  { value: "Sweden", label: "Sweden" },
+  { value: "Canada", label: "Canada" },
+  { value: "Netherlands", label: "Netherlands" },
+  { value: "United States", label: "United States" },
+  { value: "France", label: "France" },
+  { value: "Australia", label: "Australia" },
+  { value: "Anywhere", label: "Open to anywhere" },
+];
+
+const FIELD_OPTIONS = [
+  { value: "Computer Science", label: "Computer Science" },
+  { value: "Engineering", label: "Engineering" },
+  { value: "Medicine & Health", label: "Medicine & Health" },
+  { value: "Business & Economics", label: "Business & Economics" },
+  { value: "Sciences", label: "Sciences" },
+  { value: "Social Sciences & Arts", label: "Social Sciences & Arts" },
+  { value: "Agriculture & Environment", label: "Agriculture & Environment" },
+];
+
+const GPA_SCALE_OPTIONS = [
+  { value: "4.0", label: "4.0 Scale" },
+  { value: "5.0", label: "5.0 Scale" },
+  { value: "7.0", label: "7.0 Scale" },
+  { value: "100", label: "Percentage (100)" },
+];
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -38,7 +79,6 @@ export default function ProfilePage() {
     targetCountryOfStudy: "",
   });
 
-  const [stats, setStats] = useState({ saved: 0, reviewed: 0, avgMatch: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -47,15 +87,8 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [profRes, savedRes, reviewsRes] = await Promise.all([
-          fetch("/api/profile"),
-          fetch("/api/saved"),
-          fetch("/api/reviews")
-        ]);
-
+        const profRes = await fetch("/api/profile");
         const profData = await profRes.json();
-        const savedData = savedRes.ok ? await savedRes.json() : [];
-        const reviewsData = reviewsRes.ok ? await reviewsRes.json() : [];
 
         if (profData.exists) {
           setProfile({
@@ -70,17 +103,6 @@ export default function ProfilePage() {
             targetCountryOfStudy: profData.profile.countryOfStudy || "",
           });
         }
-
-        const avgMatch = savedData.length > 0
-          ? savedData.reduce((acc: number, curr: any) => acc + curr.matchScore, 0) / savedData.length
-          : 0;
-
-        setStats({
-          saved: savedData.length,
-          reviewed: reviewsData.length,
-          avgMatch: Math.round(avgMatch * 100),
-        });
-
       } catch (err) {
         console.error(err);
       } finally {
@@ -107,13 +129,15 @@ export default function ProfilePage() {
           gpa: profile.gpa ? parseFloat(profile.gpa) : null,
           gpaScale: profile.gpaScale ? parseFloat(profile.gpaScale) : null,
           citizenships: profile.nationality ? [profile.nationality] : [],
-          countryOfStudy: profile.targetCountryOfStudy
+          countryOfStudy: profile.targetCountryOfStudy === "Anywhere" ? "" : profile.targetCountryOfStudy
         }),
       });
 
       if (res.ok) {
         setSavedSuccess(true);
         setIsDirty(false);
+        // Invalidate router cache so dashboard matching triggers a fresh recalculation!
+        router.refresh();
         setTimeout(() => setSavedSuccess(false), 2500);
       }
     } catch (err) {
@@ -131,266 +155,185 @@ export default function ProfilePage() {
     );
   }
 
-  const initials = `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
+  // Calculate mock readiness score based on filled fields
+  const filledFields = Object.values(profile).filter(v => v !== "" && v !== null).length;
+  const totalFields = Object.keys(profile).length;
+  const readinessScore = Math.round((filledFields / totalFields) * 100);
 
-  // Get flag emoji for nationality (rough implementation for common codes, fallback to flag if undefined)
-  const getFlag = (code: string) => {
-    if (!code) return "🌍";
-    const codePoints = code.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0));
-    return String.fromCodePoint(...codePoints);
-  };
+  // Generate AI Insights
+  const insights = [];
+  if (profile.gpa && parseFloat(profile.gpa) >= 3.5 && profile.gpaScale === "4.0") {
+    insights.push({ id: "1", type: "strength", text: `Your ${profile.gpa} GPA makes you highly competitive for top-tier academic merit scholarships.` });
+  }
+  if (profile.fieldOfStudy) {
+    insights.push({ id: "2", type: "strength", text: `There is currently a 24% increase in funding opportunities for ${profile.fieldOfStudy} candidates.` });
+  }
+  if (!profile.targetCountryOfStudy || profile.targetCountryOfStudy === "Anywhere") {
+    insights.push({ id: "3", type: "opportunity", text: "Adding a target destination country will unlock region-specific government scholarships (e.g. Chevening, DAAD)." });
+  }
+
+  // Generate Timeline Milestones
+  const milestones = [];
+  if (profile.currentDegree) {
+    milestones.push({
+      id: "m1",
+      type: "past",
+      title: "Previous Education",
+      subtitle: `Completed prerequisites for ${profile.currentDegree.toLowerCase()} studies.`,
+      icon: "degree"
+    });
+    milestones.push({
+      id: "m2",
+      type: "current",
+      title: "Current Status",
+      subtitle: `${profile.currentDegree === "UNDERGRADUATE" ? "BSc" : profile.currentDegree === "MASTERS" ? "Masters" : "PhD"} in ${profile.fieldOfStudy || "Progress"}`,
+      date: "Present",
+      icon: "degree"
+    });
+  }
+  milestones.push({
+    id: "m3",
+    type: "future",
+    title: "Target Opportunity",
+    subtitle: `Seeking ${profile.needsFinancialAid ? "fully-funded " : ""}programs${profile.targetCountryOfStudy && profile.targetCountryOfStudy !== "Anywhere" ? ` in ${profile.targetCountryOfStudy}` : " globally"}.`,
+    icon: "target"
+  });
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col pb-[100px]">
-      
-      {/* PAGE HEADER */}
-      <header className="bg-surface border-b border-border pt-8 px-6 pb-6">
-        <div className="max-w-[600px] mx-auto w-full relative">
-          
-          {/* Back row */}
+    <div className="min-h-screen bg-bg flex flex-col pb-[120px]">
+      <div className="flex-1 max-w-[800px] mx-auto w-full px-4 sm:px-6 py-8">
+        
+        {/* Top Navigation */}
+        <div className="mb-6 flex justify-between items-center">
           <button
             onClick={() => router.back()}
             className="flex items-center gap-1.5 bg-transparent hover:bg-surface-hover px-2 py-1 -ml-2 rounded-md transition-colors text-ink font-ui font-medium text-[14px]"
           >
             <ArrowLeft size={16} />
-            Back
+            Home
           </button>
-
-          {/* Identity block */}
-          <div className="mt-[20px] flex items-center">
-            <div className="w-[56px] h-[56px] shrink-0 rounded-full bg-moss-light border-2 border-moss flex items-center justify-center">
-              <span className="text-[22px] font-editorial font-normal text-moss">
-                {initials || "?"}
-              </span>
-            </div>
-            <div className="ml-4">
-              <h1 className="text-[28px] font-editorial font-normal text-ink leading-tight">
-                {profile.firstName || "Your"} {profile.lastName || "Profile"}
-              </h1>
-              <p className="text-[14px] font-ui text-ink-secondary mt-0.5">
-                {profile.nationality ? `${getFlag(profile.nationality)} ${profile.nationality}` : "No nationality"} · {profile.currentDegree || "No degree selected"}
-              </p>
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div className="flex gap-6 mt-[24px]">
-            <div>
-              <div className="text-[32px] font-editorial font-normal text-moss leading-none mb-1">{stats.saved}</div>
-              <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium">Saved</div>
-            </div>
-            <div>
-              <div className="text-[32px] font-editorial font-normal text-moss leading-none mb-1">{stats.reviewed}</div>
-              <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium">Reviewed</div>
-            </div>
-            <div>
-              <div className="text-[32px] font-editorial font-normal text-moss leading-none mb-1">{stats.avgMatch > 0 ? `${stats.avgMatch}%` : "—"}</div>
-              <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium">Avg. Match</div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* FORM SECTIONS */}
-      <div className="flex-1 max-w-[600px] mx-auto w-full px-6 py-8">
-        
-        {/* PERSONAL */}
-        <div className="mb-10">
-          <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium mb-4 pb-2 border-b border-border">
-            Personal
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="First name"
-              value={profile.firstName}
-              onChange={(e) => updateField("firstName", e.target.value)}
-            />
-            <Input
-              label="Last name"
-              value={profile.lastName}
-              onChange={(e) => updateField("lastName", e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* ACADEMIC PROFILE */}
-        <div className="mb-10">
-          <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium mb-4 pb-2 border-b border-border">
-            Academic Profile
-          </div>
           
-          <div className="mb-6">
-            <div className="text-[13px] font-ui text-ink-secondary mb-2">Degree level</div>
-            <div className="flex gap-3">
-              {["UNDERGRADUATE", "MASTERS", "PHD"].map((level) => {
-                const isSelected = profile.currentDegree === level;
-                return (
-                  <button
-                    key={level}
-                    onClick={() => updateField("currentDegree", level)}
-                    className={cn(
-                      "flex-1 h-12 flex items-center justify-center rounded-lg border text-[13px] font-ui font-medium transition-colors",
-                      isSelected 
-                        ? "bg-moss-light border-moss text-moss" 
-                        : "bg-surface border-border text-ink-secondary hover:bg-surface-hover"
-                    )}
-                  >
-                    {level === "UNDERGRADUATE" ? "BSc" : level === "MASTERS" ? "Masters" : "PhD"}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <Input
-              label="Field of study"
-              value={profile.fieldOfStudy}
-              onChange={(e) => updateField("fieldOfStudy", e.target.value)}
-            />
-          </div>
-
-          <div className="grid grid-cols-[1fr_100px] gap-4">
-            <Input
-              label="GPA"
-              type="number"
-              value={profile.gpa}
-              onChange={(e) => updateField("gpa", e.target.value)}
-            />
-            <Input
-              label="Scale"
-              type="number"
-              value={profile.gpaScale}
-              onChange={(e) => updateField("gpaScale", e.target.value)}
-            />
-          </div>
+          <button 
+            onClick={() => signOut(() => router.push("/"))}
+            className="flex items-center gap-1.5 text-ink-tertiary hover:text-ink-secondary text-[13px] font-ui transition-colors"
+          >
+            <LockKey size={14} />
+            Sign out
+          </button>
         </div>
 
-        {/* PREFERENCES */}
-        <div className="mb-10">
-          <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium mb-4 pb-2 border-b border-border">
-            Preferences
+        <ProfileHeader 
+          firstName={profile.firstName}
+          lastName={profile.lastName}
+          nationality={profile.nationality}
+          currentDegree={profile.currentDegree}
+          fieldOfStudy={profile.fieldOfStudy}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          {/* LEFT COLUMN: Metric & Insights */}
+          <div className="md:col-span-1 flex flex-col gap-6">
+            <ReadinessScore score={readinessScore} />
+            <AIInsights insights={insights as any} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <Input
-              label="Nationality"
-              value={profile.nationality}
-              onChange={(e) => updateField("nationality", e.target.value)}
-            />
-            <Input
-              label="Target country"
-              value={profile.targetCountryOfStudy}
-              onChange={(e) => updateField("targetCountryOfStudy", e.target.value)}
-            />
-          </div>
+          {/* RIGHT COLUMN: Timeline & Bento Grid Data */}
+          <div className="md:col-span-2 flex flex-col gap-6">
+            
+            {/* Inline Editing Bento Cards */}
+            <div className="bg-surface border border-border rounded-[24px] p-6">
+              <h2 className="text-[18px] font-editorial text-ink mb-5">Core Profile</h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="group z-40">
+                  <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium flex items-center gap-1.5 mb-1.5">
+                    <Student size={14} /> Degree Level
+                  </label>
+                  <CustomSelect
+                    value={profile.currentDegree}
+                    onChange={(val) => updateField("currentDegree", val)}
+                    options={DEGREE_OPTIONS}
+                    placeholder="Select degree..."
+                  />
+                </div>
 
-          <div>
-            <div className="text-[13px] font-ui text-ink-secondary mb-2">Needs financial aid?</div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => updateField("needsFinancialAid", true)}
-                className={cn(
-                  "flex-1 h-12 flex items-center justify-center rounded-lg border text-[13px] font-ui font-medium transition-colors",
-                  profile.needsFinancialAid === true
-                    ? "bg-moss-light border-moss text-moss" 
-                    : "bg-surface border-border text-ink-secondary hover:bg-surface-hover"
-                )}
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => updateField("needsFinancialAid", false)}
-                className={cn(
-                  "flex-1 h-12 flex items-center justify-center rounded-lg border text-[13px] font-ui font-medium transition-colors",
-                  profile.needsFinancialAid === false
-                    ? "bg-moss-light border-moss text-moss" 
-                    : "bg-surface border-border text-ink-secondary hover:bg-surface-hover"
-                )}
-              >
-                No
-              </button>
+                <div className="group z-30">
+                  <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium flex items-center gap-1.5 mb-1.5">
+                    <GlobeHemisphereWest size={14} /> Target Destination
+                  </label>
+                  <CustomSelect
+                    value={profile.targetCountryOfStudy || "Anywhere"}
+                    onChange={(val) => updateField("targetCountryOfStudy", val === "Anywhere" ? "" : val)}
+                    options={DESTINATION_OPTIONS}
+                    placeholder="Select destination..."
+                  />
+                </div>
+
+                <div className="group z-20">
+                  <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium mb-1.5 flex items-center gap-1.5">
+                    Field of Study
+                  </label>
+                  <CustomSelect
+                    value={profile.fieldOfStudy}
+                    onChange={(val) => updateField("fieldOfStudy", val)}
+                    options={FIELD_OPTIONS}
+                    placeholder="Select field..."
+                  />
+                </div>
+
+                <div className="group flex gap-4 z-10">
+                  <div className="flex-[3]">
+                    <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium mb-1.5 block">
+                      GPA Score
+                    </label>
+                    <input 
+                      type="number"
+                      step="0.01"
+                      value={profile.gpa}
+                      onChange={(e) => updateField("gpa", e.target.value)}
+                      placeholder="e.g. 3.8"
+                      className="w-full bg-transparent border-b border-border/50 hover:border-border focus:border-moss outline-none py-[7px] text-[14px] font-ui text-ink transition-colors placeholder:text-ink-tertiary"
+                    />
+                  </div>
+                  <div className="flex-[2] relative">
+                    <label className="text-[11px] font-ui uppercase tracking-wider text-ink-tertiary font-medium mb-1.5 block">
+                      Scale
+                    </label>
+                    <CustomSelect
+                      value={profile.gpaScale}
+                      onChange={(val) => updateField("gpaScale", val)}
+                      options={GPA_SCALE_OPTIONS}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* ACCOUNT */}
-        <div>
-          <div className="text-[11px] font-ui uppercase tracking-[0.08em] text-ink-tertiary font-medium mb-4 pb-2 border-b border-border">
-            Account
-          </div>
-          
-          <div className="bg-surface border border-border rounded-lg p-4 flex items-start gap-3">
-            <LockKey size={20} className="text-ink-tertiary shrink-0 mt-[2px]" />
-            <div>
-              <div className="text-[14px] font-ui text-ink-secondary mb-1">
-                {user?.primaryEmailAddress?.emailAddress}
-              </div>
-              <button 
-                onClick={() => signOut(() => router.push("/"))}
-                className="text-[13px] font-ui text-clay hover:text-clay-light transition-colors"
-              >
-                Manage your email via account settings &rarr;
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* SCHOLARSHIP DNA SECTION */}
-        <div className="mt-8 bg-surface border border-border rounded-xl p-6 md:p-7">
-          <h2 className="text-[22px] font-editorial font-normal text-ink mb-1">
-            Your scholarship profile
-          </h2>
-          <p className="text-[13px] font-ui text-ink-secondary mb-6">
-            How our matching engine sees you.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {profile.needsFinancialAid && (
-              <div className="bg-moss-light border border-moss text-moss rounded-full px-3.5 py-1.5 text-[13px] font-ui font-medium">
-                Need-based funding
-              </div>
-            )}
-            {profile.targetCountryOfStudy && (
-              <div className="bg-moss-light border border-moss text-moss rounded-full px-3.5 py-1.5 text-[13px] font-ui font-medium">
-                {profile.targetCountryOfStudy} destination
-              </div>
-            )}
-            {profile.currentDegree && (
-              <div className="bg-moss-light border border-moss text-moss rounded-full px-3.5 py-1.5 text-[13px] font-ui font-medium">
-                {profile.currentDegree === "UNDERGRADUATE" ? "BSc" : profile.currentDegree === "MASTERS" ? "Masters" : "PhD"} level
-              </div>
-            )}
-            {profile.fieldOfStudy && (
-              <div className="bg-moss-light border border-moss text-moss rounded-full px-3.5 py-1.5 text-[13px] font-ui font-medium">
-                {profile.fieldOfStudy} focus
-              </div>
-            )}
+            <JourneyTimeline milestones={milestones as any} />
           </div>
         </div>
 
       </div>
 
       {/* STICKY SAVE BUTTON */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border">
-        <div className="max-w-[600px] mx-auto px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border transition-transform duration-300 ${isDirty ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="max-w-[800px] mx-auto px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex justify-end">
           <button
             onClick={handleSave}
             disabled={!isDirty || isSaving}
             className={cn(
-              "w-full h-14 rounded-full font-ui font-medium text-[15px] flex items-center justify-center gap-2 transition-all duration-200",
+              "px-8 h-12 rounded-full font-ui font-medium text-[14px] flex items-center justify-center gap-2 transition-all duration-200",
               savedSuccess 
-                ? "bg-success-surface text-success hover:bg-success-surface pointer-events-none" 
-                : isDirty
-                  ? "bg-moss text-white hover:bg-moss-dark shadow-lg shadow-moss/20"
-                  : "bg-surface-hover text-ink-secondary cursor-not-allowed border border-border"
+                ? "bg-success-surface text-success pointer-events-none" 
+                : "bg-moss text-white hover:bg-moss-dark shadow-lg shadow-moss/20"
             )}
           >
             {isSaving ? (
-              <CircleNotch size={20} className="animate-spin" />
+              <CircleNotch size={18} className="animate-spin" />
             ) : savedSuccess ? (
               <>
-                <CheckCircle size={20} weight="fill" />
-                Saved!
+                <CheckCircle size={18} weight="fill" />
+                Saved
               </>
             ) : (
               "Save changes"
@@ -399,7 +342,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Only show bottom nav if we don't have dirty state */}
       {!isDirty && <BottomNav />}
     </div>
   );
