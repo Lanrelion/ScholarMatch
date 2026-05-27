@@ -20,7 +20,7 @@ const serwist = new Serwist({
 
 serwist.addEventListeners();
 
-self.addEventListener("push", (e) => {
+self.addEventListener("push", (e: any) => {
   if (e.data) {
     try {
       let t = e.data.json();
@@ -34,17 +34,17 @@ self.addEventListener("push", (e) => {
           requireInteraction: false,
         })
       );
-    } catch (e) {
-      console.error("Push Event Error:", e);
+    } catch (err) {
+      console.error("Push Event Error:", err);
     }
   }
 });
 
-self.addEventListener("notificationclick", (e) => {
+self.addEventListener("notificationclick", (e: any) => {
   e.notification.close();
   let t = e.notification.data?.url ?? "/";
   e.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients: any[]) => {
       let client = clients.find((c) => c.url.includes(self.location.origin));
       if (client) {
         client.focus();
