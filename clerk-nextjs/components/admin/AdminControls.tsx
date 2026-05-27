@@ -47,10 +47,10 @@ export function AdminControls() {
           onClick={handleRunCrawler}
           disabled={isRunning}
           className={cn(
-            "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-sm active:scale-95",
+            "flex items-center gap-2 px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95",
             isRunning 
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
-              : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)]"
+              ? "bg-[var(--color-surface)] text-[var(--color-text-tertiary)] border border-[var(--color-border)] cursor-not-allowed" 
+              : "bg-[var(--color-white)] text-[var(--color-text-primary)] border border-[var(--color-border)] hover:bg-[var(--color-surface)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] hover:shadow-md"
           )}
         >
           {isRunning ? (

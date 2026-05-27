@@ -7,38 +7,36 @@ import { cn } from "@/lib/utils";
 export function AdminTabs({ currentTab }: { currentTab: string }) {
 
   return (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-6 pb-2 border-b border-[var(--color-border)]">
-      <div className="flex items-center gap-8">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6 pb-4 mb-4">
+      <div className="flex items-center gap-2 p-1.5 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full shadow-sm">
         <Link 
           href="/admin?tab=all&page=1"
           className={cn(
-            "pb-4 text-[11px] font-black uppercase tracking-[0.2em] transition-all relative",
+            "px-6 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-full transition-all",
             currentTab === "all" 
-              ? "text-[var(--color-primary)]" 
-              : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
+              ? "bg-[var(--color-primary)] text-[var(--color-white)] shadow-md shadow-[var(--color-primary)]/20" 
+              : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-white)]"
           )}
         >
           All Scholarships
-          {currentTab === "all" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)] rounded-full" />}
         </Link>
         <Link 
           href="/admin?tab=pending&page=1"
           className={cn(
-            "pb-4 text-[11px] font-black uppercase tracking-[0.2em] transition-all relative",
+            "px-6 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-full transition-all",
             currentTab === "pending" 
-              ? "text-[var(--color-primary)]" 
-              : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
+              ? "bg-[var(--color-primary)] text-[var(--color-white)] shadow-md shadow-[var(--color-primary)]/20" 
+              : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-white)]"
           )}
         >
           Pending Review
-          {currentTab === "pending" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--color-primary)] rounded-full" />}
         </Link>
       </div>
 
-      <div className="flex items-center gap-4 pb-1">
+      <div className="flex items-center gap-4">
         <Link 
           href="/admin/new"
-          className="h-10 px-6 rounded-full bg-[var(--color-primary)] text-white text-[10px] font-black uppercase tracking-wider hover:brightness-110 transition-all active:scale-95 flex items-center justify-center shadow-lg shadow-[var(--color-primary)]/20"
+          className="h-11 px-6 rounded-full bg-[var(--color-text-primary)] text-[var(--color-surface)] text-[11px] font-black uppercase tracking-wider hover:scale-105 transition-transform active:scale-95 flex items-center justify-center shadow-lg shadow-black/10"
         >
           + Create Entry
         </Link>
