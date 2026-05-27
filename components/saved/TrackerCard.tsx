@@ -90,7 +90,7 @@ export function TrackerCard({ item, provided, isDragging }: TrackerCardProps) {
           {scholarship.title}
         </h3>
         <p className="font-ui text-[13px] text-ink-secondary line-clamp-1 mb-4">
-          {scholarship.provider} {scholarship.countryOfStudy ? `· ${scholarship.countryOfStudy}` : ''}
+          {scholarship.provider} {(scholarship as any).countryOfStudy ? `· ${(scholarship as any).countryOfStudy}` : ''}
         </p>
 
         {/* Tags / Signals */}

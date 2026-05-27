@@ -75,7 +75,7 @@ export async function GET(req: Request) {
     });
 
     // Sort final array by matchScore DESC
-    results.sort((a, b) => b.matchScore - a.matchScore);
+    results.sort((a: any, b: any) => b.matchScore - a.matchScore);
 
     return NextResponse.json({
       data: results,

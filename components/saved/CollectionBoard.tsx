@@ -49,7 +49,7 @@ export function CollectionBoard({ initialItems, activeFilter }: CollectionBoardP
   // Sync when initialItems change, grouping by collectionStatus
   useEffect(() => {
     setColumns(prev => {
-      const newColumns = {
+      const newColumns: ColumnsState = {
         incoming: { ...prev.incoming, items: [] as any[] },
         safety: { ...prev.safety, items: [] as any[] },
         target: { ...prev.target, items: [] as any[] },
@@ -58,8 +58,8 @@ export function CollectionBoard({ initialItems, activeFilter }: CollectionBoardP
 
       initialItems.forEach(item => {
         const status = item.collectionStatus || "incoming";
-        if (newColumns[status as keyof ColumnsState]) {
-          newColumns[status as keyof ColumnsState].items.push(item);
+        if (newColumns[status]) {
+          newColumns[status].items.push(item);
         } else {
           newColumns.incoming.items.push(item);
         }
