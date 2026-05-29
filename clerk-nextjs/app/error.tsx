@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 export default function GlobalError({
@@ -10,7 +10,12 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [isOffline, setIsOffline] = useState(false);
+
   useEffect(() => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setIsOffline(true);
+    }
     console.error(error);
   }, [error]);
 
@@ -19,7 +24,7 @@ export default function GlobalError({
       <div className="absolute inset-0 pointer-events-none opacity-[0.06] mix-blend-overlay grain-overlay" />
       <div className="z-10 w-full">
         <ErrorState 
-          type="api-error" 
+          type={isOffline ? "offline" : "api-error"} 
           onRetry={() => {
             reset();
             window.location.reload();

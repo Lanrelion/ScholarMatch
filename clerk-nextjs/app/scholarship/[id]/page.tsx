@@ -10,6 +10,25 @@ import { cache } from "react";
 const getScholarship = cache(async (id: string) => {
   return await db.scholarship.findUnique({
     where: { id, isActive: true },
+    select: {
+      id: true,
+      title: true,
+      provider: true,
+      hostCountry: true,
+      description: true,
+      amount: true,
+      currency: true,
+      deadline: true,
+      eligibleDegrees: true,
+      eligibleNationalities: true,
+      fieldsOfStudy: true,
+      sourceDomain: true,
+      sourceUrl: true,
+      eligibilityParsed: true,
+      eligibilityRaw: true,
+      isActive: true,
+      lastChangedAt: true,
+    }
   });
 });
 

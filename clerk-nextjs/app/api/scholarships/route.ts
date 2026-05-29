@@ -60,7 +60,22 @@ export async function GET(req: Request) {
         where: whereClause,
         skip,
         take: limit,
-        orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
+        orderBy: { deadline: { sort: 'asc', nulls: 'last' } },
+        select: {
+          id: true,
+          title: true,
+          provider: true,
+          hostCountry: true,
+          amount: true,
+          currency: true,
+          deadline: true,
+          eligibleDegrees: true,
+          eligibleNationalities: true,
+          fieldsOfStudy: true,
+          sourceDomain: true,
+          eligibilityParsed: true,
+          isActive: true,
+        }
       })
     ]);
 

@@ -9,18 +9,32 @@ interface ReadinessScoreProps {
 
 export function ReadinessScore({ score }: ReadinessScoreProps) {
   const [currentScore, setCurrentScore] = useState(0);
+  const prevScoreRef = React.useRef(0);
 
   useEffect(() => {
-    // Animate score counting up
+    const startScore = prevScoreRef.current;
+    if (startScore === score) {
+      setCurrentScore(score);
+      return;
+    }
+
+    // Animate score counting up or down
     const duration = 1500;
     const steps = 60;
     const stepTime = duration / steps;
+    const diff = score - startScore;
     let step = 0;
 
     const timer = setInterval(() => {
       step++;
-      setCurrentScore(Math.min(Math.round((step / steps) * score), score));
-      if (step >= steps) clearInterval(timer);
+      const progress = step / steps;
+      setCurrentScore(Math.round(startScore + (diff * progress)));
+      
+      if (step >= steps) {
+        clearInterval(timer);
+        setCurrentScore(score);
+        prevScoreRef.current = score;
+      }
     }, stepTime);
 
     return () => clearInterval(timer);
