@@ -14,8 +14,8 @@ export function AdminTabs({ currentTab }: { currentTab: string }) {
           className={cn(
             "px-6 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-full transition-all",
             currentTab === "all" 
-              ? "bg-[var(--color-primary)] text-[var(--color-white)] shadow-md shadow-[var(--color-primary)]/20" 
-              : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-white)]"
+              ? "bg-[var(--color-moss)] text-[var(--color-surface)] shadow-md shadow-[var(--color-moss)]/20" 
+              : "text-[var(--color-ink-tertiary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)]"
           )}
         >
           All Scholarships
@@ -25,8 +25,8 @@ export function AdminTabs({ currentTab }: { currentTab: string }) {
           className={cn(
             "px-6 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-full transition-all",
             currentTab === "pending" 
-              ? "bg-[var(--color-primary)] text-[var(--color-white)] shadow-md shadow-[var(--color-primary)]/20" 
-              : "text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-white)]"
+              ? "bg-[var(--color-moss)] text-[var(--color-surface)] shadow-md shadow-[var(--color-moss)]/20" 
+              : "text-[var(--color-ink-tertiary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)]"
           )}
         >
           Pending Review
@@ -36,7 +36,7 @@ export function AdminTabs({ currentTab }: { currentTab: string }) {
       <div className="flex items-center gap-4">
         <Link 
           href="/admin/new"
-          className="h-11 px-6 rounded-full bg-[var(--color-text-primary)] text-[var(--color-surface)] text-[11px] font-black uppercase tracking-wider hover:scale-105 transition-transform active:scale-95 flex items-center justify-center shadow-lg shadow-black/10"
+          className="h-11 px-6 rounded-full bg-[var(--color-ink)] text-[var(--color-surface)] text-[11px] font-black uppercase tracking-wider hover:scale-105 transition-transform active:scale-95 flex items-center justify-center shadow-lg shadow-black/10"
         >
           + Create Entry
         </Link>

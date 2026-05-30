@@ -45,15 +45,9 @@ const DESTINATION_OPTIONS = [
   { value: "Anywhere", label: "Open to anywhere" },
 ];
 
-const FIELD_OPTIONS = [
-  { value: "Computer Science", label: "Computer Science" },
-  { value: "Engineering", label: "Engineering" },
-  { value: "Medicine & Health", label: "Medicine & Health" },
-  { value: "Business & Economics", label: "Business & Economics" },
-  { value: "Sciences", label: "Sciences" },
-  { value: "Social Sciences & Arts", label: "Social Sciences & Arts" },
-  { value: "Agriculture & Environment", label: "Agriculture & Environment" },
-];
+import { ALL_FIELDS } from "@/components/onboarding/screens/Screen5Field";
+
+const FIELD_OPTIONS = ALL_FIELDS.map(f => ({ value: f, label: f }));
 
 const GPA_SCALE_OPTIONS = [
   { value: "4.0", label: "4.0 Scale" },

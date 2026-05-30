@@ -1,12 +1,10 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function Hero() {
-  const router = useRouter();
-
   return (
     <section 
       data-section="dark"
@@ -85,12 +83,12 @@ export default function Hero() {
           transition={{ delay: 1.3, duration: 0.6 }}
           className="flex flex-wrap items-center justify-center gap-[12px] mt-[40px]"
         >
-          <button
-            onClick={() => router.push('/sign-up')}
-            className="px-[28px] py-[14px] bg-moss text-white rounded-full font-ui text-[15px] font-medium transition-all duration-300 hover:bg-[#3F4F38] hover:-translate-y-[2px] shadow-[0_12px_32px_rgba(95,111,82,0.4)]"
+          <Link
+            href="/sign-up"
+            className="px-[28px] py-[14px] flex items-center justify-center bg-moss text-white rounded-full font-ui text-[15px] font-medium transition-all duration-300 hover:bg-[#3F4F38] hover:-translate-y-[2px] shadow-[0_12px_32px_rgba(95,111,82,0.4)]"
           >
             Find my scholarships &rarr;
-          </button>
+          </Link>
           <button
             onClick={() => {
               const el = document.getElementById("how-it-works");

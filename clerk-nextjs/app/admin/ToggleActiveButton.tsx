@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function ToggleActiveButton({ id, isActive: initialActive, isPendingReview }: { id: string, isActive: boolean, isPendingReview?: boolean }) {
-  const [isActive, setIsActive] = useState(initialActive);
+export function ToggleActiveButton({ id, isActive, isPendingReview }: { id: string, isActive: boolean, isPendingReview?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
@@ -17,9 +16,7 @@ export function ToggleActiveButton({ id, isActive: initialActive, isPendingRevie
         method: "POST"
       });
       if (res.ok) {
-        const data = await res.json();
-        setIsActive(data.isActive);
-        router.refresh();
+        window.location.reload();
       } else {
         alert("Failed to toggle status");
       }
@@ -40,7 +37,7 @@ export function ToggleActiveButton({ id, isActive: initialActive, isPendingRevie
         method: "DELETE"
       });
       if (res.ok) {
-        router.refresh();
+        window.location.reload();
       } else {
         alert("Failed to reject");
       }

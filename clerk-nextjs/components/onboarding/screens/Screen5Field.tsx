@@ -9,7 +9,7 @@ interface Props {
   updateField: <K extends keyof OnboardingState>(field: K, value: OnboardingState[K]) => void;
 }
 
-const FIELD_CATEGORIES: { label: string; fields: string[] }[] = [
+export const FIELD_CATEGORIES: { label: string; fields: string[] }[] = [
   {
     label: "Technology & Engineering",
     fields: [
@@ -56,7 +56,7 @@ const FIELD_CATEGORIES: { label: string; fields: string[] }[] = [
   },
 ];
 
-const ALL_FIELDS = FIELD_CATEGORIES.flatMap((c) => c.fields);
+export const ALL_FIELDS = FIELD_CATEGORIES.flatMap((c) => c.fields);
 
 export default function Screen5Field({ state, updateField }: Props) {
   const [search, setSearch] = useState("");

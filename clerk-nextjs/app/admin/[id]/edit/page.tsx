@@ -43,7 +43,7 @@ export default function EditScholarshipPage() {
   useEffect(() => {
     async function fetchScholarship() {
       try {
-        const res = await fetch(`/api/admin/scholarships/${id}`);
+        const res = await fetch(`/api/admin/scholarships/${id}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setForm({
@@ -61,11 +61,11 @@ export default function EditScholarshipPage() {
             eligibilityRaw: data.eligibilityRaw || "",
             verified: !!data.verified,
             isActive: !!data.isActive,
-            universityName: data.universityName || "",
-            universityCountry: data.universityCountry || "",
-            programName: data.programName || "",
-            scholarshipType: data.scholarshipType || "NATIONAL",
-            applicationRoute: data.applicationRoute || "DIRECT",
+            universityName: data.hostInstitution || "",
+            universityCountry: data.hostCountry || "",
+            programName: "",
+            scholarshipType: "NATIONAL",
+            applicationRoute: "DIRECT",
           });
           if (data.lastCrawledAt) {
             const diff = Math.floor((Date.now() - new Date(data.lastCrawledAt).getTime()) / (1000 * 60 * 60 * 24));
@@ -114,8 +114,7 @@ export default function EditScholarshipPage() {
       });
 
       if (res.ok) {
-        router.push("/admin");
-        router.refresh();
+        window.location.href = "/admin";
       } else {
         const data = await res.json();
         setError(data.error || "Failed to update scholarship");
@@ -130,20 +129,19 @@ export default function EditScholarshipPage() {
   if (loading) return <div className="p-8 text-center text-gray-500">Loading scholarship...</div>;
 
   return (
-    <div className="bg-[var(--color-white)] border border-[var(--color-border)] rounded-[32px] p-8 lg:p-12 shadow-2xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[32px] p-8 lg:p-12 shadow-2xl shadow-black/5 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex justify-between items-start mb-8">
         <div>
-          <h2 className="text-2xl font-black text-[var(--color-text-primary)] tracking-tight">Edit Scholarship</h2>
+          <h2 className="text-2xl font-black text-[var(--color-ink)] tracking-tight">Edit Scholarship</h2>
           {lastCrawled && (
-            <p className="text-[11px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)] mt-2">Last crawled: {lastCrawled}</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-[var(--color-ink-tertiary)] mt-2">Last crawled: {lastCrawled}</p>
           )}
         </div>
         <button
           type="button"
           onClick={async () => {
             const res = await fetch(`/api/admin/scholarships/${id}/toggle`, { method: "POST" });
-            if (res.ok) router.refresh();
-            router.push("/admin");
+            if (res.ok) window.location.href = "/admin";
           }}
           className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
             form.isActive 
@@ -164,73 +162,73 @@ export default function EditScholarshipPage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="md:col-span-2">
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Title *</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Title *</label>
             <input
               type="text"
               required
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Provider *</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Provider *</label>
             <input
               type="text"
               required
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.provider}
               onChange={(e) => setForm({ ...form, provider: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Source URL *</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Source URL *</label>
             <input
               type="url"
               required
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.sourceUrl}
               onChange={handleSourceUrlChange}
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Source Domain</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Source Domain</label>
             <input
               type="text"
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-tertiary)] opacity-70 cursor-not-allowed"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink-tertiary)] opacity-70 cursor-not-allowed"
               value={form.sourceDomain}
               readOnly
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Deadline</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Deadline</label>
             <input
               type="date"
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.deadline}
               onChange={(e) => setForm({ ...form, deadline: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Amount</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Amount</label>
             <input
               type="number"
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Currency</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Currency</label>
             <div className="relative">
               <select
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all appearance-none"
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all appearance-none"
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
@@ -240,7 +238,7 @@ export default function EditScholarshipPage() {
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[var(--color-text-tertiary)]">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[var(--color-ink-tertiary)]">
                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
               </div>
             </div>
@@ -248,20 +246,20 @@ export default function EditScholarshipPage() {
         </div>
 
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Description</label>
+          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Description</label>
           <textarea
             rows={4}
-            className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+            className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
         </div>
 
         <div>
-          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Raw Eligibility Text</label>
+          <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Raw Eligibility Text</label>
           <textarea
             rows={3}
-            className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+            className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
             value={form.eligibilityRaw}
             onChange={(e) => setForm({ ...form, eligibilityRaw: e.target.value })}
           />
@@ -269,17 +267,17 @@ export default function EditScholarshipPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-3 pl-2">Eligible Degrees</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-3 pl-2">Eligible Degrees</label>
             <div className="flex flex-wrap gap-4">
               {DEGREE_OPTIONS.map((deg) => (
                 <label key={deg} className="flex items-center gap-2.5 cursor-pointer group">
                   <input
                     type="checkbox"
-                    className="accent-[var(--color-primary)] w-4 h-4 border-[var(--color-border)] rounded transition-all group-hover:scale-110"
+                    className="accent-[var(--color-moss)] w-4 h-4 border-[var(--color-border)] rounded transition-all group-hover:scale-110"
                     checked={form.eligibleDegrees.includes(deg)}
                     onChange={() => toggleDegree(deg)}
                   />
-                  <span className="text-[13px] font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">{deg.charAt(0) + deg.slice(1).toLowerCase()}</span>
+                  <span className="text-[13px] font-bold text-[var(--color-ink)] group-hover:text-[var(--color-moss)] transition-colors">{deg.charAt(0) + deg.slice(1).toLowerCase()}</span>
                 </label>
               ))}
             </div>
@@ -289,40 +287,40 @@ export default function EditScholarshipPage() {
             <label className="flex items-center gap-2.5 cursor-pointer group">
               <input
                 type="checkbox"
-                className="accent-[var(--color-primary)] w-5 h-5 border-[var(--color-border)] rounded transition-all group-hover:scale-110"
+                className="accent-[var(--color-moss)] w-5 h-5 border-[var(--color-border)] rounded transition-all group-hover:scale-110"
                 checked={form.verified}
                 onChange={(e) => setForm({ ...form, verified: e.target.checked })}
               />
-              <span className="text-[13px] font-black tracking-wide text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">Verified</span>
+              <span className="text-[13px] font-black tracking-wide text-[var(--color-ink)] group-hover:text-[var(--color-moss)] transition-colors">Verified</span>
             </label>
             <label className="flex items-center gap-2.5 cursor-pointer group">
               <input
                 type="checkbox"
-                className="accent-[var(--color-primary)] w-5 h-5 border-[var(--color-border)] rounded transition-all group-hover:scale-110"
+                className="accent-[var(--color-moss)] w-5 h-5 border-[var(--color-border)] rounded transition-all group-hover:scale-110"
                 checked={form.isActive}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
               />
-              <span className="text-[13px] font-black tracking-wide text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">Active</span>
+              <span className="text-[13px] font-black tracking-wide text-[var(--color-ink)] group-hover:text-[var(--color-moss)] transition-colors">Active</span>
             </label>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Fields of Study (comma-separated)</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Fields of Study (comma-separated)</label>
             <input
               type="text"
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.fields}
               onChange={(e) => setForm({ ...form, fields: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Nationalities (comma-separated ISO or "ALL")</label>
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Nationalities (comma-separated ISO or "ALL")</label>
             <textarea
               rows={2}
-              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+              className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
               value={form.eligibleNationalities}
               onChange={(e) => setForm({ ...form, eligibleNationalities: e.target.value })}
             />
@@ -330,23 +328,23 @@ export default function EditScholarshipPage() {
         </div>
 
         <div className="pt-8 border-t border-[var(--color-border)]">
-          <h3 className="text-[11px] font-black text-[var(--color-text-secondary)] uppercase tracking-[0.2em] mb-6 pl-2">University-specific Details</h3>
+          <h3 className="text-[11px] font-black text-[var(--color-ink-secondary)] uppercase tracking-[0.2em] mb-6 pl-2">University-specific Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">University Name</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">University Name</label>
               <input
                 type="text"
                 placeholder="Uppsala University"
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
                 value={form.universityName}
                 onChange={(e) => setForm({ ...form, universityName: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">University Country</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">University Country</label>
               <div className="relative">
                 <select
-                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all appearance-none"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all appearance-none"
                   value={form.universityCountry}
                   onChange={(e) => setForm({ ...form, universityCountry: e.target.value })}
                 >
@@ -355,42 +353,42 @@ export default function EditScholarshipPage() {
                     <option key={c.code} value={c.code}>{c.name}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[var(--color-text-tertiary)]">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[var(--color-ink-tertiary)]">
                   <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                 </div>
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-2 pl-2">Program Name</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-2 pl-2">Program Name</label>
               <input
                 type="text"
                 placeholder="MSc Microbiology (Leave blank if open to all programs)"
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:ring-2 focus:ring-[var(--color-primary)]/20 outline-none transition-all"
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-4 text-[13px] font-bold text-[var(--color-ink)] placeholder-[var(--color-ink-tertiary)] focus:ring-2 focus:ring-[var(--color-moss)]/20 outline-none transition-all"
                 value={form.programName}
                 onChange={(e) => setForm({ ...form, programName: e.target.value })}
               />
             </div>
             
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-3 pl-2">Scholarship Type</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-3 pl-2">Scholarship Type</label>
               <div className="flex flex-col gap-3">
                 {["NATIONAL", "UNIVERSITY", "DEPARTMENT"].map(type => (
                   <label key={type} className="flex items-center gap-3 cursor-pointer group">
                     <input
                       type="radio"
                       name={`scholarshipType_edit`}
-                      className="accent-[var(--color-primary)] w-4 h-4 border-[var(--color-border)] transition-transform group-hover:scale-110"
+                      className="accent-[var(--color-moss)] w-4 h-4 border-[var(--color-border)] transition-transform group-hover:scale-110"
                       checked={form.scholarshipType === type}
                       onChange={() => setForm({ ...form, scholarshipType: type })}
                     />
-                    <span className="text-[13px] font-bold text-[var(--color-text-primary)] capitalize group-hover:text-[var(--color-primary)] transition-colors">{type.toLowerCase()} scholarship</span>
+                    <span className="text-[13px] font-bold text-[var(--color-ink)] capitalize group-hover:text-[var(--color-moss)] transition-colors">{type.toLowerCase()} scholarship</span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mb-3 pl-2">Application Route</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mb-3 pl-2">Application Route</label>
               <div className="flex flex-col gap-3">
                 {[
                   { value: "DIRECT", label: "Direct application" },
@@ -401,11 +399,11 @@ export default function EditScholarshipPage() {
                     <input
                       type="radio"
                       name={`applicationRoute_edit`}
-                      className="accent-[var(--color-primary)] w-4 h-4 border-[var(--color-border)] transition-transform group-hover:scale-110"
+                      className="accent-[var(--color-moss)] w-4 h-4 border-[var(--color-border)] transition-transform group-hover:scale-110"
                       checked={form.applicationRoute === route.value}
                       onChange={() => setForm({ ...form, applicationRoute: route.value })}
                     />
-                    <span className="text-[13px] font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-primary)] transition-colors">{route.label}</span>
+                    <span className="text-[13px] font-bold text-[var(--color-ink)] group-hover:text-[var(--color-moss)] transition-colors">{route.label}</span>
                   </label>
                 ))}
               </div>
@@ -417,14 +415,14 @@ export default function EditScholarshipPage() {
           <button
             type="button"
             onClick={() => router.push("/admin")}
-            className="px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] transition-all"
+            className="px-6 py-3 rounded-full text-[11px] font-black uppercase tracking-widest text-[var(--color-ink-tertiary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface)] transition-all"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-widest bg-[var(--color-primary)] text-[var(--color-white)] shadow-lg shadow-[var(--color-primary)]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+            className="px-8 py-3 rounded-full text-[11px] font-black uppercase tracking-widest bg-[var(--color-moss)] text-[var(--color-surface)] shadow-lg shadow-[var(--color-moss)]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {saving ? "Saving..." : "Update Scholarship"}
           </button>
