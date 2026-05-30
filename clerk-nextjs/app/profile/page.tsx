@@ -14,6 +14,7 @@ import { ReadinessScore } from "@/components/profile/ReadinessScore";
 import { JourneyTimeline } from "@/components/profile/JourneyTimeline";
 import { AIInsights } from "@/components/profile/AIInsights";
 import { CustomSelect } from "@/components/ui/CustomSelect";
+import { ALL_FIELDS } from "@/lib/constants";
 
 type ProfileData = {
   firstName: string;
@@ -45,7 +46,7 @@ const DESTINATION_OPTIONS = [
   { value: "Anywhere", label: "Open to anywhere" },
 ];
 
-import { ALL_FIELDS } from "@/components/onboarding/screens/Screen5Field";
+
 
 const FIELD_OPTIONS = ALL_FIELDS.map(f => ({ value: f, label: f }));
 

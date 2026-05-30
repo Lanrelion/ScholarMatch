@@ -18,6 +18,7 @@ const nextConfig = {
   
   // Suppress the workspace root warning
   serverExternalPackages: ['@prisma/client'],
+  transpilePackages: ['@phosphor-icons/react'],
   
   eslint: {
     // Ignore ESLint errors during build to allow deploy
