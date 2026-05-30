@@ -28,11 +28,13 @@ export async function GET(req: Request) {
 
   try {
     // STEP 2 — Find scholarships due for re-check (72 hours since last check)
+    const url = new URL(req.url);
+    const force = url.searchParams.get("force") === "true";
     const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000);
 
     const savedToCheck = await db.savedScholarship.findMany({
       where: {
-        OR: [
+        OR: force ? undefined : [
           { lastCheckedAt: null },
           { lastCheckedAt: { lt: cutoff } }
         ],
