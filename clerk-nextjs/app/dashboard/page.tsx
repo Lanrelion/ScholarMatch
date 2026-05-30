@@ -45,7 +45,22 @@ export default async function DashboardPage() {
   const scholarships = await db.scholarship.findMany({
     where: whereClause,
     take: 40,
-    orderBy: { deadline: { sort: 'asc', nulls: 'last' } }
+    orderBy: { deadline: { sort: 'asc', nulls: 'last' } },
+    select: {
+      id: true,
+      title: true,
+      provider: true,
+      hostCountry: true,
+      amount: true,
+      currency: true,
+      deadline: true,
+      eligibleDegrees: true,
+      eligibleNationalities: true,
+      fieldsOfStudy: true,
+      sourceDomain: true,
+      eligibilityParsed: true,
+      isActive: true,
+    }
   });
 
   // Transform and score scholarships on the server

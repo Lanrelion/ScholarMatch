@@ -202,16 +202,17 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
 function AdminStatCard({ label, value, icon: Icon, color }: { label: string; value: number; icon: any; color: string }) {
   const colorStyles = {
-    gray: "bg-[var(--color-surface)] text-[var(--color-text-tertiary)] border-[var(--color-border)]",
-    green: "bg-[var(--color-primary-surface)] text-[var(--color-primary)] border-[var(--color-primary-border)]",
-    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 border-blue-100 dark:border-blue-900/30",
-    orange: "bg-orange-50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 border-orange-100 dark:border-orange-900/30",
+    gray: "bg-[var(--color-surface)] text-[var(--color-text-tertiary)] border-[var(--color-border)] shadow-[var(--color-border)]/50",
+    green: "bg-[var(--color-primary-surface)] text-[var(--color-primary)] border-[var(--color-primary-border)] shadow-[var(--color-primary)]/20",
+    blue: "bg-blue-50/50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 border-blue-100 dark:border-blue-900/30 shadow-blue-500/10",
+    orange: "bg-orange-50/50 dark:bg-orange-900/20 text-orange-500 dark:text-orange-400 border-orange-100 dark:border-orange-900/30 shadow-orange-500/10",
   }[color as "gray" | "green" | "blue" | "orange"];
 
   return (
-    <div className="bg-[var(--color-white)] border border-[var(--color-border)] rounded-[32px] p-8 shadow-sm hover:shadow-xl transition-all duration-500 group">
-      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 duration-500", colorStyles)}>
-        <Icon size={24} />
+    <div className="bg-[var(--color-white)] border border-[var(--color-border)] rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-[var(--color-primary)]/5 hover:-translate-y-1 transition-all duration-500 group relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-[var(--color-surface)] opacity-50 rounded-bl-[100px] pointer-events-none" />
+      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3 duration-500 shadow-lg border", colorStyles)}>
+        <Icon size={24} strokeWidth={2.5} />
       </div>
       <p className="text-[10px] text-[var(--color-text-tertiary)] uppercase tracking-[0.2em] font-black mb-2">{label}</p>
       <p className="text-4xl font-black text-[var(--color-text-primary)] tracking-tighter">{value}</p>

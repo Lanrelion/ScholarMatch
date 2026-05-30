@@ -29,7 +29,7 @@ const TOP_COUNTRIES: Country[] = [
   { name: "Zimbabwe", code: "ZW", flag: "🇿🇼" },
 ];
 
-const ALL_AFRICAN_COUNTRIES: Country[] = [
+export const ALL_AFRICAN_COUNTRIES: Country[] = [
   { name: "Algeria", code: "DZ", flag: "🇩🇿" },
   { name: "Angola", code: "AO", flag: "🇦🇴" },
   { name: "Benin", code: "BJ", flag: "🇧🇯" },

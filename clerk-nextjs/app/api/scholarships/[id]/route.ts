@@ -12,7 +12,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
 
     const scholarship = await db.scholarship.findUnique({
-      where: { id }
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        provider: true,
+        hostCountry: true,
+        description: true,
+        amount: true,
+        currency: true,
+        deadline: true,
+        eligibleDegrees: true,
+        eligibleNationalities: true,
+        fieldsOfStudy: true,
+        sourceDomain: true,
+        sourceUrl: true,
+        eligibilityParsed: true,
+        eligibilityRaw: true,
+        isActive: true,
+        lastChangedAt: true,
+      }
     });
 
     if (!scholarship || !scholarship.isActive) {

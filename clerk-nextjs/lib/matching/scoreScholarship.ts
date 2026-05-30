@@ -12,7 +12,12 @@ export type ProfileForMatching = {
 };
 
 export function scoreScholarship(
-  scholarship: Scholarship,
+  scholarship: {
+    eligibleNationalities: string[];
+    eligibleDegrees: DegreeLevel[];
+    fieldsOfStudy: string[];
+    eligibilityParsed: any;
+  },
   profile: ProfileForMatching
 ): { matchScore: number; matchBreakdown: MatchBreakdown } {
   let score = 0;

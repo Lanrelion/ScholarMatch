@@ -11,7 +11,25 @@ export async function GET() {
   try {
     const saved = await db.savedScholarship.findMany({
       where: { userId },
-      include: { scholarship: true },
+      include: { 
+        scholarship: {
+          select: {
+            id: true,
+            title: true,
+            provider: true,
+            hostCountry: true,
+            amount: true,
+            currency: true,
+            deadline: true,
+            eligibleDegrees: true,
+            eligibleNationalities: true,
+            fieldsOfStudy: true,
+            sourceDomain: true,
+            eligibilityParsed: true,
+            isActive: true,
+          }
+        } 
+      },
       orderBy: {
         scholarship: {
           deadline: "asc",

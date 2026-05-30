@@ -24,8 +24,8 @@ export function AdminFilters() {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-4 mb-6">
-      <div className="flex items-center gap-2 px-4 py-2 bg-[var(--color-white)] border border-[var(--color-border)] rounded-2xl shadow-sm">
+    <div className="flex flex-wrap items-center gap-3 mb-8">
+      <div className="flex items-center gap-2 pl-4 pr-2 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full shadow-sm hover:shadow-md transition-shadow group">
         <ShieldCheck size={14} className="text-blue-500" />
         <select 
           value={currentVerified || ""} 
@@ -38,7 +38,7 @@ export function AdminFilters() {
         </select>
       </div>
 
-      <div className="flex items-center gap-2 px-4 py-2 bg-[var(--color-white)] border border-[var(--color-border)] rounded-2xl shadow-sm">
+      <div className="flex items-center gap-2 pl-4 pr-2 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full shadow-sm hover:shadow-md transition-shadow group">
         <CheckCircle size={14} className="text-[var(--color-primary)]" />
         <select 
           value={currentActive || ""} 
@@ -51,7 +51,7 @@ export function AdminFilters() {
         </select>
       </div>
 
-      <div className="flex items-center gap-2 px-4 py-2 bg-[var(--color-white)] border border-[var(--color-border)] rounded-2xl shadow-sm">
+      <div className="flex items-center gap-2 pl-4 pr-2 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full shadow-sm hover:shadow-md transition-shadow group">
         <TrendingUp size={14} className="text-orange-500" />
         <select 
           value={currentMinSaves} 
@@ -68,7 +68,7 @@ export function AdminFilters() {
       {(currentVerified || currentActive || currentMinSaves !== "0") && (
         <button 
           onClick={() => router.push("?")}
-          className="text-[10px] font-black text-[var(--color-text-tertiary)] uppercase tracking-[0.2em] hover:text-[var(--color-primary)] transition-colors ml-2"
+          className="text-[10px] font-black text-[var(--color-text-tertiary)] uppercase tracking-[0.2em] hover:text-[var(--color-primary)] transition-colors ml-2 hover:bg-[var(--color-surface)] px-4 py-2 rounded-full border border-transparent hover:border-[var(--color-border)]"
         >
           Clear Filters
         </button>

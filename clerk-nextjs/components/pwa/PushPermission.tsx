@@ -14,47 +14,69 @@ export default function PushPermission() {
     setPermission(Notification.permission)
   }, [])
 
+  const [errorMsg, setErrorMsg] = useState("");
+
   const handleEnable = async () => {
-    setIsRegistering(true)
+    setIsRegistering(true);
+    setErrorMsg("");
 
     try {
       // 1. Request permission
-      const result = await Notification.requestPermission()
+      const result = await Notification.requestPermission();
       if (result !== "granted") {
-        setPermission(result)
-        setIsRegistering(false)
-        return
+        setPermission(result);
+        setIsRegistering(false);
+        return;
+      }
+      
+      // Even if subsequent push setup fails, we've got browser permission
+      setPermission("granted");
+
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        console.warn("VAPID key not configured, skipping push subscription setup");
+        setIsRegistering(false);
+        return;
       }
 
-      // 2. Get service worker registration
-      const registration = await navigator.serviceWorker.ready
+      // 2. Get service worker registration with a timeout so it doesn't hang forever
+      const getRegistrationWithTimeout = () => {
+        return Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Service worker ready timeout")), 5000))
+        ]);
+      };
+
+      const registration = await getRegistrationWithTimeout();
 
       // 3. Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        )
-      })
+        applicationServerKey: urlBase64ToUint8Array(vapidKey)
+      });
 
       // 4. Send subscription to server
-      const sub = subscription.toJSON()
-      await fetch("/api/notify/subscribe", {
+      const sub = subscription.toJSON();
+      const res = await fetch("/api/notify/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           endpoint: sub.endpoint,
           keys: sub.keys
         })
-      })
+      });
 
-      setPermission("granted")
-    } catch (error) {
-      console.error("Push registration failed:", error)
+      if (!res.ok) {
+        throw new Error("Failed to save push subscription to server");
+      }
+
+    } catch (error: any) {
+      console.error("Push registration failed:", error);
+      setErrorMsg(error.message || "Failed to enable notifications");
     } finally {
-      setIsRegistering(false)
+      setIsRegistering(false);
     }
-  }
+  };
 
   if (permission === "unsupported" || permission === "granted" || permission === "denied") {
     return null
@@ -74,6 +96,12 @@ export default function PushPermission() {
       <p className="text-xs text-[#0F6E56] mt-2 mb-4 leading-relaxed">
         We'll notify you 30, 7, and 1 day before each scholarship deadline so you never miss an opportunity.
       </p>
+
+      {errorMsg && (
+        <div className="mb-4 text-xs font-semibold text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+          {errorMsg}
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         <button

@@ -117,15 +117,19 @@ export default function ProfilePage() {
     setIsDirty(true);
   };
 
+  const [saveError, setSaveError] = useState("");
+
   const handleSave = async () => {
     if (isSaving || !isDirty) return;
     setIsSaving(true);
+    setSaveError("");
     try {
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...profile,
+          needsFinancialAid: profile.needsFinancialAid ?? false,
           gpa: profile.gpa ? parseFloat(profile.gpa) : null,
           gpaScale: profile.gpaScale ? parseFloat(profile.gpaScale) : null,
           citizenships: profile.nationality ? [profile.nationality] : [],
@@ -139,9 +143,13 @@ export default function ProfilePage() {
         // Invalidate router cache so dashboard matching triggers a fresh recalculation!
         router.refresh();
         setTimeout(() => setSavedSuccess(false), 2500);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setSaveError(`Failed to save: ${errorData.error || res.statusText}`);
       }
     } catch (err) {
       console.error(err);
+      setSaveError("Network error while saving.");
     } finally {
       setIsSaving(false);
     }
@@ -316,8 +324,13 @@ export default function ProfilePage() {
       </div>
 
       {/* STICKY SAVE BUTTON */}
-      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border transition-transform duration-300 ${isDirty ? 'translate-y-0' : 'translate-y-full'}`}>
-        <div className="max-w-[800px] mx-auto px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex justify-end">
+      <div className={`fixed bottom-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-md border-t border-border transition-transform duration-300 ${isDirty || saveError ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="max-w-[800px] mx-auto px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center justify-end gap-4">
+          {saveError && (
+            <div className="text-sm font-ui font-medium text-urgent">
+              {saveError}
+            </div>
+          )}
           <button
             onClick={handleSave}
             disabled={!isDirty || isSaving}
@@ -342,7 +355,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {!isDirty && <BottomNav />}
+      {(!isDirty && !saveError) && <BottomNav />}
     </div>
   );
 }
