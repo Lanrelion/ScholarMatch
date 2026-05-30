@@ -4,8 +4,8 @@ import { resend } from "../../../../lib/resend";
 
 export async function GET(req: Request) {
   // console.log("[Cron] Auth bypass enabled for testing.");
-  const cronAuth = req.headers.get("x-cron-auth");
-  if (cronAuth !== process.env.CRON_SECRET) {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     const url = new URL(req.url);
     if (url.searchParams.get("key") !== process.env.CRON_SECRET) {
       return new Response("Unauthorized", { status: 401 });

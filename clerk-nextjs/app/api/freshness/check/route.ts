@@ -7,8 +7,8 @@ import { buildChangeEmail } from "../../../../lib/freshness/buildChangeEmail";
 
 export async function GET(req: Request) {
   // STEP 1 — Auth check (same as reminders cron)
-  const cronAuth = req.headers.get("x-cron-auth");
-  if (cronAuth !== process.env.CRON_SECRET) {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     // For manual testing, allow if query param matches
     const url = new URL(req.url);
     if (url.searchParams.get("key") !== process.env.CRON_SECRET) {
