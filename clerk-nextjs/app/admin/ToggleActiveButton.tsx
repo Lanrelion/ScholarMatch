@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function ToggleActiveButton({ id, isActive: initialActive, isPendingReview }: { id: string, isActive: boolean, isPendingReview?: boolean }) {
-  const [isActive, setIsActive] = useState(initialActive);
+export function ToggleActiveButton({ id, isActive, isPendingReview }: { id: string, isActive: boolean, isPendingReview?: boolean }) {
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const router = useRouter();
@@ -17,9 +16,7 @@ export function ToggleActiveButton({ id, isActive: initialActive, isPendingRevie
         method: "POST"
       });
       if (res.ok) {
-        const data = await res.json();
-        setIsActive(data.isActive);
-        router.refresh();
+        window.location.reload();
       } else {
         alert("Failed to toggle status");
       }
@@ -40,7 +37,7 @@ export function ToggleActiveButton({ id, isActive: initialActive, isPendingRevie
         method: "DELETE"
       });
       if (res.ok) {
-        router.refresh();
+        window.location.reload();
       } else {
         alert("Failed to reject");
       }
@@ -57,14 +54,14 @@ export function ToggleActiveButton({ id, isActive: initialActive, isPendingRevie
         <button
           onClick={handleToggle}
           disabled={loading || deleting}
-          className={`text-xs font-medium ${loading ? "text-gray-300" : "text-green-600 hover:text-green-800"}`}
+          className={`text-xs font-medium ${loading ? "text-gray-300 dark:text-gray-600" : "text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"}`}
         >
           {loading ? "..." : "Activate"}
         </button>
         <button
           onClick={handleReject}
           disabled={loading || deleting}
-          className={`text-xs font-medium ${deleting ? "text-gray-300" : "text-red-500 hover:text-red-700"}`}
+          className={`text-xs font-medium ${deleting ? "text-gray-300 dark:text-gray-600" : "text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"}`}
         >
           {deleting ? "..." : "Reject"}
         </button>
@@ -76,7 +73,7 @@ export function ToggleActiveButton({ id, isActive: initialActive, isPendingRevie
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`text-xs font-medium ${loading ? "text-gray-300" : "text-gray-500 hover:text-gray-800"}`}
+      className={`text-xs font-medium ${loading ? "text-gray-300 dark:text-gray-600" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
     >
       {loading ? "..." : (isActive ? "Deactivate" : "Activate")}
     </button>

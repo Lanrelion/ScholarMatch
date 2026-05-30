@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
 export async function POST(
   req: Request,
@@ -30,6 +31,9 @@ export async function POST(
         verified: true // Mark as verified if activated from admin
       }
     });
+
+    revalidatePath("/admin");
+    revalidatePath("/dashboard");
 
     return NextResponse.json({ isActive: updated.isActive });
   } catch (error) {

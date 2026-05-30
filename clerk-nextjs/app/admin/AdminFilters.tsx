@@ -30,24 +30,24 @@ export function AdminFilters() {
         <select 
           value={currentVerified || ""} 
           onChange={(e) => updateFilter("verified", e.target.value)}
-          className="text-[11px] font-black uppercase tracking-wider bg-transparent outline-none cursor-pointer text-[var(--color-text-primary)]"
+          className="text-[11px] font-black uppercase tracking-wider bg-transparent outline-none cursor-pointer text-[var(--color-ink)]"
         >
-          <option value="" className="bg-[var(--color-white)]">Verification Status</option>
-          <option value="true" className="bg-[var(--color-white)]">Verified Only</option>
-          <option value="false" className="bg-[var(--color-white)]">Unverified Only</option>
+          <option value="" className="bg-[var(--color-surface)]">Verification Status</option>
+          <option value="true" className="bg-[var(--color-surface)]">Verified Only</option>
+          <option value="false" className="bg-[var(--color-surface)]">Unverified Only</option>
         </select>
       </div>
 
       <div className="flex items-center gap-2 pl-4 pr-2 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-full shadow-sm hover:shadow-md transition-shadow group">
-        <CheckCircle size={14} className="text-[var(--color-primary)]" />
+        <CheckCircle size={14} className="text-[var(--color-moss)]" />
         <select 
           value={currentActive || ""} 
           onChange={(e) => updateFilter("active", e.target.value)}
-          className="text-[11px] font-black uppercase tracking-wider bg-transparent outline-none cursor-pointer text-[var(--color-text-primary)]"
+          className="text-[11px] font-black uppercase tracking-wider bg-transparent outline-none cursor-pointer text-[var(--color-ink)]"
         >
-          <option value="" className="bg-[var(--color-white)]">Visibility Status</option>
-          <option value="true" className="bg-[var(--color-white)]">Active Only</option>
-          <option value="false" className="bg-[var(--color-white)]">Hidden Only</option>
+          <option value="" className="bg-[var(--color-surface)]">Visibility Status</option>
+          <option value="true" className="bg-[var(--color-surface)]">Active Only</option>
+          <option value="false" className="bg-[var(--color-surface)]">Hidden Only</option>
         </select>
       </div>
 
@@ -56,19 +56,19 @@ export function AdminFilters() {
         <select 
           value={currentMinSaves} 
           onChange={(e) => updateFilter("minSaves", e.target.value)}
-          className="text-[11px] font-black uppercase tracking-wider bg-transparent outline-none cursor-pointer text-[var(--color-text-primary)]"
+          className="text-[11px] font-black uppercase tracking-wider bg-transparent outline-none cursor-pointer text-[var(--color-ink)]"
         >
-          <option value="0" className="bg-[var(--color-white)]">All Save Counts</option>
-          <option value="1" className="bg-[var(--color-white)]">1+ Saves</option>
-          <option value="5" className="bg-[var(--color-white)]">5+ Saves</option>
-          <option value="10" className="bg-[var(--color-white)]">10+ Saves</option>
+          <option value="0" className="bg-[var(--color-surface)]">All Save Counts</option>
+          <option value="1" className="bg-[var(--color-surface)]">1+ Saves</option>
+          <option value="5" className="bg-[var(--color-surface)]">5+ Saves</option>
+          <option value="10" className="bg-[var(--color-surface)]">10+ Saves</option>
         </select>
       </div>
 
       {(currentVerified || currentActive || currentMinSaves !== "0") && (
         <button 
           onClick={() => router.push("?")}
-          className="text-[10px] font-black text-[var(--color-text-tertiary)] uppercase tracking-[0.2em] hover:text-[var(--color-primary)] transition-colors ml-2 hover:bg-[var(--color-surface)] px-4 py-2 rounded-full border border-transparent hover:border-[var(--color-border)]"
+          className="text-[10px] font-black text-[var(--color-ink-tertiary)] uppercase tracking-[0.2em] hover:text-[var(--color-moss)] transition-colors ml-2 hover:bg-[var(--color-surface)] px-4 py-2 rounded-full border border-transparent hover:border-[var(--color-border)]"
         >
           Clear Filters
         </button>

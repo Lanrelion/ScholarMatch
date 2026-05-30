@@ -10,17 +10,17 @@ export function ThemeToggle() {
     const savedTheme = localStorage.getItem("admin-theme");
     if (savedTheme === "dark") {
       setIsDark(true);
-      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
     }
   }, []);
 
   const toggleTheme = () => {
     if (isDark) {
-      document.documentElement.classList.remove("dark");
+      document.documentElement.removeAttribute("data-theme");
       localStorage.setItem("admin-theme", "light");
       setIsDark(false);
     } else {
-      document.documentElement.classList.add("dark");
+      document.documentElement.setAttribute("data-theme", "dark");
       localStorage.setItem("admin-theme", "dark");
       setIsDark(true);
     }

@@ -52,28 +52,28 @@ export default function Navbar() {
           >
             How it works
           </button>
-          <button 
-            onClick={() => router.push("/sign-in")}
+          <Link 
+            href="/sign-in"
             className={cn(
               "text-[14px] font-ui font-normal transition-colors duration-300 hover:text-white",
               scrolled ? "text-ink-secondary hover:text-ink" : "text-white/70"
             )}
           >
             Sign in
-          </button>
+          </Link>
         </div>
         
-        <button
-          onClick={() => router.push("/sign-up")}
+        <Link
+          href="/sign-up"
           className={cn(
-            "h-10 px-6 rounded-full font-ui font-medium text-[14px] transition-all duration-300",
+            "h-10 px-6 rounded-full font-ui font-medium text-[14px] transition-all duration-300 flex items-center justify-center",
             scrolled
               ? "bg-moss text-white hover:bg-moss-dark shadow-sm"
               : "bg-transparent border border-white/50 text-white hover:bg-white/10"
           )}
         >
           Get started &rarr;
-        </button>
+        </Link>
       </div>
     </nav>
   );

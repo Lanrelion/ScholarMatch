@@ -13,14 +13,14 @@ export default async function AdminLayout({
       <div className="max-w-[1400px] mx-auto px-6 py-8">
         <header className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-[var(--color-text-primary)] flex items-center justify-center text-[var(--color-surface)] shadow-xl shadow-black/10">
+            <div className="w-10 h-10 rounded-xl bg-[var(--color-ink)] flex items-center justify-center text-[var(--color-surface)] shadow-xl shadow-black/10">
               <span className="font-black text-xl">S</span>
             </div>
             <div>
-              <h1 className="text-xl font-black text-[var(--color-text-primary)] leading-none tracking-tighter">
+              <h1 className="text-xl font-black text-[var(--color-ink)] leading-none tracking-tighter">
                 Control Center
               </h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] mt-1.5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-ink-tertiary)] mt-1.5">
                 ScholarMatch Operations
               </p>
             </div>
