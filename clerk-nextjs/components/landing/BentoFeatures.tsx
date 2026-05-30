@@ -52,8 +52,8 @@ export default function BentoFeatures() {
   return (
     <section 
       id="features"
-      data-section="light"
-      className="bg-surface py-[clamp(80px,12vw,140px)] px-6 overflow-hidden relative"
+      data-section="dark"
+      className="bg-moss py-[clamp(80px,12vw,140px)] px-6 overflow-hidden relative"
     >
       <div className="max-w-[1180px] mx-auto">
         
@@ -65,10 +65,10 @@ export default function BentoFeatures() {
           variants={scrollVariants}
           className="text-center mb-[60px] md:mb-[80px]"
         >
-          <div className="font-ui text-[11px] font-medium uppercase tracking-[0.12em] text-moss mb-4">
+          <div className="font-ui text-[11px] font-medium uppercase tracking-[0.12em] text-[#DDE5D4] mb-4">
             WHAT YOU GET
           </div>
-          <h2 className="font-editorial text-[clamp(2.5rem,5vw,48px)] font-light text-ink leading-tight mb-4">
+          <h2 className="font-editorial text-[clamp(2.5rem,5vw,48px)] font-light text-white leading-tight mb-4">
             Everything between you<br className="hidden sm:block"/> and your scholarship.
           </h2>
         </motion.div>
@@ -85,7 +85,7 @@ export default function BentoFeatures() {
           {/* LARGE CARD: AI Matching Engine (8 col) */}
           <motion.div variants={itemVariants} className="md:col-span-8 bg-[#0A0A0A] border border-white/5 rounded-[20px] p-[40px] min-h-[320px] relative overflow-hidden group hover:-translate-y-1 hover:border-moss/30 transition-all duration-300">
             <div className="relative z-10">
-              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-moss mb-[24px]">
+              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-[#8DA67D] mb-[24px]">
                 MATCHING ENGINE
               </div>
               <h3 className="font-editorial text-[32px] font-normal text-white leading-tight mb-[16px]">
@@ -110,24 +110,24 @@ export default function BentoFeatures() {
           </motion.div>
 
           {/* SMALL CARD: Freshness Monitoring (4 col) */}
-          <motion.div variants={itemVariants} className="md:col-span-4 bg-bg border border-border rounded-[20px] p-[32px] min-h-[320px] relative group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+          <motion.div variants={itemVariants} className="md:col-span-4 bg-[#0A0A0A] border border-white/5 rounded-[20px] p-[32px] min-h-[320px] relative group hover:-translate-y-1 hover:border-moss/30 transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="w-[40px] h-[40px] rounded-full bg-moss-light flex items-center justify-center mb-6">
-                <ArrowsClockwise size={20} className="text-moss" />
+              <div className="w-[40px] h-[40px] rounded-full bg-white/5 flex items-center justify-center mb-6">
+                <ArrowsClockwise size={20} className="text-[#8DA67D]" />
               </div>
-              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-moss mb-2">
+              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-[#8DA67D] mb-2">
                 FRESHNESS MONITORING
               </div>
-              <h3 className="font-editorial text-[26px] font-normal text-ink leading-tight mb-2">
+              <h3 className="font-editorial text-[26px] font-normal text-white leading-tight mb-2">
                 Always up to date.
               </h3>
-              <p className="font-ui text-[14px] text-ink-secondary leading-[1.6]">
+              <p className="font-ui text-[14px] text-white/55 leading-[1.6]">
                 Saved scholarships re-checked every 72 hours. We alert you the moment anything changes.
               </p>
             </div>
             
             {/* Visual */}
-            <div className="mt-8 bg-warning-surface border border-warning/30 p-3 rounded-[10px]">
+            <div className="mt-8 bg-[#2D2011] border border-warning/20 p-3 rounded-[10px]">
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-ui font-medium text-warning">⚠ Deadline moved to Mar 15</span>
               </div>
@@ -137,30 +137,30 @@ export default function BentoFeatures() {
 
           {/* ROW 2 */}
           {/* SMALL CARD: Deadline Reminders (4 col) */}
-          <motion.div variants={itemVariants} className="md:col-span-4 bg-moss rounded-[20px] p-[32px] min-h-[320px] relative group hover:bg-moss-dark transition-all duration-300 flex flex-col justify-between">
+          <motion.div variants={itemVariants} className="md:col-span-4 bg-bg border border-border rounded-[20px] p-[32px] min-h-[320px] relative group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-white/60 mb-2">
+              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-moss mb-2">
                 NEVER MISS A DEADLINE
               </div>
-              <h3 className="font-editorial text-[26px] font-normal text-white leading-tight mb-2">
+              <h3 className="font-editorial text-[26px] font-normal text-ink leading-tight mb-2">
                 30, 7, 1 day ahead.
               </h3>
-              <p className="font-ui text-[14px] text-white/70 leading-[1.6]">
+              <p className="font-ui text-[14px] text-ink-secondary leading-[1.6]">
                 Email and push reminders timed exactly right.
               </p>
             </div>
             
             {/* Visual */}
             <div className="space-y-2 mt-8">
-              <div className="bg-white rounded-[10px] py-2.5 px-3.5 shadow-sm flex items-center gap-2">
+              <div className="bg-surface border border-border rounded-[10px] py-2.5 px-3.5 shadow-sm flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-moss" />
                 <span className="text-[13px] font-ui text-ink">30 days — Chevening</span>
               </div>
-              <div className="bg-white/90 rounded-[10px] py-2.5 px-3.5 shadow-sm flex items-center gap-2">
+              <div className="bg-surface/90 border border-border/80 rounded-[10px] py-2.5 px-3.5 shadow-sm flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-warning" />
                 <span className="text-[13px] font-ui text-ink">7 days — Swedish Inst.</span>
               </div>
-              <div className="bg-white/80 rounded-[10px] py-2.5 px-3.5 shadow-sm flex items-center gap-2">
+              <div className="bg-surface/60 border border-border/50 rounded-[10px] py-2.5 px-3.5 shadow-sm flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-urgent" />
                 <span className="text-[13px] font-ui text-ink">1 day — DAAD</span>
               </div>
@@ -168,31 +168,31 @@ export default function BentoFeatures() {
           </motion.div>
 
           {/* SMALL CARD: Long-tail Matching (4 col) */}
-          <motion.div variants={itemVariants} className="md:col-span-4 bg-surface border border-border rounded-[20px] p-[32px] min-h-[320px] relative group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+          <motion.div variants={itemVariants} className="md:col-span-4 bg-[#0A0A0A] border border-white/5 rounded-[20px] p-[32px] min-h-[320px] relative group hover:-translate-y-1 hover:border-moss/30 transition-all duration-300 flex flex-col justify-between">
             <div>
-              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-moss mb-2">
+              <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-[#8DA67D] mb-2">
                 UNIVERSITY-SPECIFIC
               </div>
-              <h3 className="font-editorial text-[26px] font-normal text-ink leading-tight mb-2">
+              <h3 className="font-editorial text-[26px] font-normal text-white leading-tight mb-2">
                 Scholarships others miss.
               </h3>
-              <p className="font-ui text-[14px] text-ink-secondary leading-[1.6]">
+              <p className="font-ui text-[14px] text-white/55 leading-[1.6]">
                 Department-level awards buried in university websites, surfaced for your exact programme.
               </p>
             </div>
             
             {/* Visual */}
-            <div className="mt-8 bg-clay-light border border-clay/20 p-4 rounded-[12px]">
-              <div className="text-[12px] font-ui text-clay font-medium mb-1">Uppsala University</div>
-              <div className="text-[14px] font-editorial text-ink mb-2">Microbiology Masters Award</div>
-              <div className="inline-flex bg-white px-2 py-1 rounded text-[11px] font-ui text-ink-secondary shadow-sm">
+            <div className="mt-8 bg-[#1A1612] border border-clay/20 p-4 rounded-[12px]">
+              <div className="text-[12px] font-ui text-[#C49A70] font-medium mb-1">Uppsala University</div>
+              <div className="text-[14px] font-editorial text-white mb-2">Microbiology Masters Award</div>
+              <div className="inline-flex bg-white/10 px-2 py-1 rounded text-[11px] font-ui text-white/60 shadow-sm">
                 Less than 40 applicants last cycle
               </div>
             </div>
           </motion.div>
 
           {/* SMALL CARD: African-First (4 col) */}
-          <motion.div variants={itemVariants} className="md:col-span-4 bg-[#0A0A0A] border border-white/5 rounded-[20px] p-[32px] min-h-[320px] relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+          <motion.div variants={itemVariants} className="md:col-span-4 bg-[#0A0A0A] border border-white/5 rounded-[20px] p-[32px] min-h-[320px] relative overflow-hidden group hover:-translate-y-1 hover:border-moss/30 transition-all duration-300">
             <div className="relative z-10">
               <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-white mb-2">
                 BUILT FOR AFRICA
@@ -207,7 +207,7 @@ export default function BentoFeatures() {
             
             {/* Visual: Abstract SVG of Africa (decorative) */}
             <svg 
-              className="absolute right-[-20%] bottom-[-10%] w-[200px] h-[200px] text-moss opacity-30" 
+              className="absolute right-[-20%] bottom-[-10%] w-[200px] h-[200px] text-[#8DA67D] opacity-30" 
               viewBox="0 0 100 100" 
               fill="currentColor"
             >
@@ -218,7 +218,7 @@ export default function BentoFeatures() {
 
           {/* ROW 3 */}
           {/* MEDIUM CARD: Live Preview (6 col) */}
-          <motion.div variants={itemVariants} className="md:col-span-6 bg-surface border border-border rounded-[20px] p-[40px] min-h-[380px] relative group hover:-translate-y-1 transition-all duration-300">
+          <motion.div variants={itemVariants} className="md:col-span-6 bg-surface border border-transparent rounded-[20px] p-[40px] min-h-[380px] relative group hover:-translate-y-1 transition-all duration-300">
             <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-moss mb-2">
               THE CARD
             </div>
@@ -232,7 +232,7 @@ export default function BentoFeatures() {
           </motion.div>
 
           {/* MEDIUM CARD: Mobile/PWA (6 col) */}
-          <motion.div variants={itemVariants} className="md:col-span-6 bg-moss-light border border-moss/20 rounded-[20px] p-[40px] min-h-[380px] relative group hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col justify-between">
+          <motion.div variants={itemVariants} className="md:col-span-6 bg-bg border border-transparent rounded-[20px] p-[40px] min-h-[380px] relative group hover:-translate-y-1 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between">
             <div>
               <div className="font-ui text-[11px] font-medium uppercase tracking-[0.1em] text-moss mb-2">
                 WORKS EVERYWHERE
