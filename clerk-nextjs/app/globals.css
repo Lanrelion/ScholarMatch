@@ -122,6 +122,8 @@
   --duration-cinematic: 1200ms;  /* hero animations, onboarding reveals */
 }
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 [data-theme="dark"] {
   --color-bg:              #111111;
   --color-surface:         #171717;
@@ -190,7 +192,7 @@ body {
 /* Buttons */
 .btn-primary {
   background: var(--color-moss);
-  color: #FFFFFF;
+  color: var(--color-surface);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 500;

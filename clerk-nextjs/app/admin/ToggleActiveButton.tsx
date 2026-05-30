@@ -54,14 +54,14 @@ export function ToggleActiveButton({ id, isActive, isPendingReview }: { id: stri
         <button
           onClick={handleToggle}
           disabled={loading || deleting}
-          className={`text-xs font-medium ${loading ? "text-gray-300" : "text-green-600 hover:text-green-800"}`}
+          className={`text-xs font-medium ${loading ? "text-gray-300 dark:text-gray-600" : "text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300"}`}
         >
           {loading ? "..." : "Activate"}
         </button>
         <button
           onClick={handleReject}
           disabled={loading || deleting}
-          className={`text-xs font-medium ${deleting ? "text-gray-300" : "text-red-500 hover:text-red-700"}`}
+          className={`text-xs font-medium ${deleting ? "text-gray-300 dark:text-gray-600" : "text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"}`}
         >
           {deleting ? "..." : "Reject"}
         </button>
@@ -73,7 +73,7 @@ export function ToggleActiveButton({ id, isActive, isPendingReview }: { id: stri
     <button
       onClick={handleToggle}
       disabled={loading}
-      className={`text-xs font-medium ${loading ? "text-gray-300" : "text-gray-500 hover:text-gray-800"}`}
+      className={`text-xs font-medium ${loading ? "text-gray-300 dark:text-gray-600" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"}`}
     >
       {loading ? "..." : (isActive ? "Deactivate" : "Activate")}
     </button>
